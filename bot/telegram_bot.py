@@ -43,15 +43,16 @@ class ChatGPTTelegramBot:
         self.config = config
         self.openai = openai
         self.commands = [
-            BotCommand(command='help', description='Show help message'),
-            BotCommand(command='reset', description='Reset the conversation. Optionally pass high-level instructions '
-                                                    '(e.g. /reset You are a helpful assistant)'),
-            BotCommand(command='image', description='Generate image from prompt (e.g. /image cat)'),
-            BotCommand(command='stats', description='Get your current usage statistics'),
-            BotCommand(command='resend', description='Resend the latest message')
+            BotCommand(command='help', description='Показать справку'),
+            BotCommand(command='reset', description='Перезагрузить разговор'),
+            BotCommand(
+                command='image', description='Генерация изображения из промта'),
+            BotCommand(command='stats',
+                       description='Показать статистику текущего использования'),
+            BotCommand(command='resend',
+                       description='Повторная отправка последнего сообщения')
         ]
-        self.disallowed_message = "Sorry, you are not allowed to use this bot. You can check out the source code at " \
-                                  "https://github.com/n3d1117/chatgpt-telegram-bot"
+        self.disallowed_message = "Sorry, you are not allowed to use this bot. You can check out the source code at "
         self.budget_limit_message = "Sorry, you have reached your monthly usage limit."
         self.usage = {}
         self.last_message = {}
@@ -60,69 +61,72 @@ class ChatGPTTelegramBot:
         """
         Shows the help menu.
         """
-        commands = [f'/{command.command} - {command.description}' for command in self.commands]
-        help_text = 'I\'m a ChatGPT bot, talk to me!' + \
+        commands = [
+            f'/{command.command} - {command.description}' for command in self.commands]
+        help_text = 'Я ChatGPT бот, поговори со мной!' + \
                     '\n\n' + \
                     '\n'.join(commands) + \
                     '\n\n' + \
-                    'Send me a voice message or file and I\'ll transcribe it for you!' + \
-                    '\n\n' + \
-                    "Open source at https://github.com/n3d1117/chatgpt-telegram-bot"
+                    'Пришлите мне голосовое сообщение или файл, и я расшифрую его для вас!'
         await update.message.reply_text(help_text, disable_web_page_preview=True)
-
 
     async def stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Returns token usage statistics for current day and month.
         """
         if not await self.is_allowed(update, context):
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
-                f'is not allowed to request their usage statistics')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права запрашивать статистику использования')
             await self.send_disallowed_message(update, context)
             return
 
-        logging.info(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
-            f'requested their usage statistics')
-        
+        logging.info(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                     f'запросил статистику использования')
+
         user_id = update.message.from_user.id
         if user_id not in self.usage:
-            self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
+            self.usage[user_id] = UsageTracker(
+                user_id, update.message.from_user.name)
 
-        tokens_today, tokens_month = self.usage[user_id].get_current_token_usage()
-        images_today, images_month = self.usage[user_id].get_current_image_count()
-        transcribe_durations = self.usage[user_id].get_current_transcription_duration()
+        tokens_today, tokens_month = self.usage[user_id].get_current_token_usage(
+        )
+        images_today, images_month = self.usage[user_id].get_current_image_count(
+        )
+        transcribe_durations = self.usage[user_id].get_current_transcription_duration(
+        )
         cost_today, cost_month = self.usage[user_id].get_current_cost()
-        
+
         chat_id = update.effective_chat.id
-        chat_messages, chat_token_length = self.openai.get_conversation_stats(chat_id)
+        chat_messages, chat_token_length = self.openai.get_conversation_stats(
+            chat_id)
         budget = await self.get_remaining_budget(update)
 
-        text_current_conversation = f"*Current conversation:*\n"+\
-                     f"{chat_messages} chat messages in history.\n"+\
-                     f"{chat_token_length} chat tokens in history.\n"+\
+        text_current_conversation = f"*Текущий разговор:*\n" +\
+            f"{chat_messages} сообщения чата в истории.\n" +\
+            f"{chat_token_length} токены чата в истории.\n" +\
+            f"----------------------------\n"
+        text_today = f"*Usage today:*\n" +\
+                     f"{tokens_today} используемые токены чата.\n" +\
+                     f"{images_today} созданные изображения.\n" +\
+                     f"{transcribe_durations[0]} расшифровка минут и {transcribe_durations[1]} секунд.\n" +\
+                     f"💰 На общую сумму ${cost_today:.2f}\n" +\
                      f"----------------------------\n"
-        text_today = f"*Usage today:*\n"+\
-                     f"{tokens_today} chat tokens used.\n"+\
-                     f"{images_today} images generated.\n"+\
-                     f"{transcribe_durations[0]} minutes and {transcribe_durations[1]} seconds transcribed.\n"+\
-                     f"💰 For a total amount of ${cost_today:.2f}\n"+\
-                     f"----------------------------\n"
-        text_month = f"*Usage this month:*\n"+\
-                     f"{tokens_month} chat tokens used.\n"+\
-                     f"{images_month} images generated.\n"+\
-                     f"{transcribe_durations[2]} minutes and {transcribe_durations[3]} seconds transcribed.\n"+\
-                     f"💰 For a total amount of ${cost_month:.2f}"
+        text_month = f"*Использование в этом месяце:*\n" +\
+                     f"{tokens_month} используемые токены чата.\n" +\
+                     f"{images_month} созданные изображения.\n" +\
+                     f"{transcribe_durations[2]} расшифровка минут и {transcribe_durations[3]} секунд.\n" +\
+                     f"💰 На общую сумму ${cost_month:.2f}"
         # text_budget filled with conditional content
         text_budget = "\n\n"
         if budget < float('inf'):
-            text_budget += f"You have a remaining budget of ${budget:.2f} this month.\n"
+            text_budget += f"В этом месяце у вас остался бюджет в размере ${budget:.2f}.\n"
         # add OpenAI account information for admin request
         if self.is_admin(update):
             grant_balance = self.openai.get_grant_balance()
             if grant_balance > 0.0:
-                text_budget += f"Your remaining OpenAI grant balance is ${grant_balance:.2f}.\n"
-            text_budget += f"Your OpenAI account was billed ${self.openai.get_billing_current_month():.2f} this month."
-        
+                text_budget += f"Ваш оставшийся баланс гранта OpenAI составляет ${grant_balance:.2f}.\n"
+            text_budget += f"На ваш счет в OpenAI был выставлен счет ${self.openai.get_billing_current_month():.2f} this month."
+
         usage_text = text_current_conversation + text_today + text_month + text_budget
         await update.message.reply_text(usage_text, parse_mode=constants.ParseMode.MARKDOWN)
 
@@ -131,20 +135,20 @@ class ChatGPTTelegramBot:
         Resend the last request
         """
         if not await self.is_allowed(update, context):
-            logging.warning(f'User {update.message.from_user.name}  (id: {update.message.from_user.id})'
-                            f' is not allowed to resend the message')
+            logging.warning(f'Пользователь {update.message.from_user.name}  (id: {update.message.from_user.id})'
+                            f' не имеет права повторно отправлять сообщение')
             await self.send_disallowed_message(update, context)
             return
 
         chat_id = update.effective_chat.id
         if chat_id not in self.last_message:
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id})'
-                            f' does not have anything to resend')
-            await context.bot.send_message(chat_id=chat_id, text="You have nothing to resend")
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id})'
+                            f' не имеет ничего для повторной отправки')
+            await context.bot.send_message(chat_id=chat_id, text="Вам нечего пересылать")
             return
 
         # Update message text, clear self.last_message and send the request to prompt
-        logging.info(f'Resending the last prompt from user: {update.message.from_user.name} '
+        logging.info(f'Повторная отправка последней подсказки от пользователя: {update.message.from_user.name} '
                      f'(id: {update.message.from_user.id})')
         with update.message._unfrozen() as message:
             message.text = self.last_message.pop(chat_id)
@@ -156,13 +160,13 @@ class ChatGPTTelegramBot:
         Resets the conversation.
         """
         if not await self.is_allowed(update, context):
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
-                f'is not allowed to reset the conversation')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права сбрасывать разговор')
             await self.send_disallowed_message(update, context)
             return
 
-        logging.info(f'Resetting the conversation for user {update.message.from_user.name} '
-            f'(id: {update.message.from_user.id})...')
+        logging.info(f'Сброс разговора для пользователя {update.message.from_user.name} '
+                     f'(id: {update.message.from_user.id})...')
 
         chat_id = update.effective_chat.id
         reset_content = message_text(update.message)
@@ -179,11 +183,11 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
         image_query = message_text(update.message)
         if image_query == '':
-            await context.bot.send_message(chat_id=chat_id, text='Please provide a prompt! (e.g. /image cat)')
+            await context.bot.send_message(chat_id=chat_id, text='Пожалуйста введите промпт!')
             return
 
-        logging.info(f'New image generation request received from user {update.message.from_user.name} '
-            f'(id: {update.message.from_user.id})')
+        logging.info(f'Запрос на создание нового изображения, полученный от пользователя {update.message.from_user.name} '
+                     f'(id: {update.message.from_user.id})')
 
         async def _generate():
             try:
@@ -195,10 +199,12 @@ class ChatGPTTelegramBot:
                 )
                 # add image request to users usage tracker
                 user_id = update.message.from_user.id
-                self.usage[user_id].add_image_request(image_size, self.config['image_prices'])
+                self.usage[user_id].add_image_request(
+                    image_size, self.config['image_prices'])
                 # add guest chat request to guest usage tracker
                 if str(user_id) not in self.config['allowed_user_ids'].split(',') and 'guests' in self.usage:
-                    self.usage["guests"].add_image_request(image_size, self.config['image_prices'])
+                    self.usage["guests"].add_image_request(
+                        image_size, self.config['image_prices'])
 
             except Exception as e:
                 logging.exception(e)
@@ -219,7 +225,8 @@ class ChatGPTTelegramBot:
             return
 
         if self.is_group_chat(update) and self.config['ignore_group_transcriptions']:
-            logging.info(f'Transcription coming from group chat, ignoring...')
+            logging.info(
+                f'Транскрипция идет из группового чата, игнорирование...')
             return
 
         chat_id = update.effective_chat.id
@@ -236,7 +243,7 @@ class ChatGPTTelegramBot:
                 await context.bot.send_message(
                     chat_id=chat_id,
                     reply_to_message_id=update.message.message_id,
-                    text=f'Failed to download audio file: {str(e)}. Make sure the file is not too large. (max 20MB)',
+                    text=f'Не удалось загрузить аудиофайл: {str(e)}. Убедитесь, что файл не слишком большой. (не более 20 МБ)',
                     parse_mode=constants.ParseMode.MARKDOWN
                 )
                 return
@@ -245,15 +252,15 @@ class ChatGPTTelegramBot:
             try:
                 audio_track = AudioSegment.from_file(filename)
                 audio_track.export(filename_mp3, format="mp3")
-                logging.info(f'New transcribe request received from user {update.message.from_user.name} '
-                    f'(id: {update.message.from_user.id})')
+                logging.info(f'Получен новый запрос на расшифровку от пользователя {update.message.from_user.name} '
+                             f'(id: {update.message.from_user.id})')
 
             except Exception as e:
                 logging.exception(e)
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     reply_to_message_id=update.message.message_id,
-                    text='Unsupported file type'
+                    text='Неподдерживаемый тип файла'
                 )
                 if os.path.exists(filename):
                     os.remove(filename)
@@ -261,7 +268,8 @@ class ChatGPTTelegramBot:
 
             user_id = update.message.from_user.id
             if user_id not in self.usage:
-                self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
+                self.usage[user_id] = UsageTracker(
+                    user_id, update.message.from_user.name)
 
             # send decoded audio to openai
             try:
@@ -271,12 +279,14 @@ class ChatGPTTelegramBot:
 
                 # add transcription seconds to usage tracker
                 transcription_price = self.config['transcription_price']
-                self.usage[user_id].add_transcription_seconds(audio_track.duration_seconds, transcription_price)
+                self.usage[user_id].add_transcription_seconds(
+                    audio_track.duration_seconds, transcription_price)
 
                 # add guest chat request to guest usage tracker
                 allowed_user_ids = self.config['allowed_user_ids'].split(',')
                 if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
-                    self.usage["guests"].add_transcription_seconds(audio_track.duration_seconds, transcription_price)
+                    self.usage["guests"].add_transcription_seconds(
+                        audio_track.duration_seconds, transcription_price)
 
                 if self.config['voice_reply_transcript']:
 
@@ -296,13 +306,15 @@ class ChatGPTTelegramBot:
                     response, total_tokens = await self.openai.get_chat_response(chat_id=chat_id, query=transcript)
 
                     # add chat request to users usage tracker
-                    self.usage[user_id].add_chat_tokens(total_tokens, self.config['token_price'])
+                    self.usage[user_id].add_chat_tokens(
+                        total_tokens, self.config['token_price'])
                     # add guest chat request to guest usage tracker
                     if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
-                        self.usage["guests"].add_chat_tokens(total_tokens, self.config['token_price'])
+                        self.usage["guests"].add_chat_tokens(
+                            total_tokens, self.config['token_price'])
 
                     # Split into chunks of 4096 characters (Telegram's message limit)
-                    transcript_output = f'_Transcript:_\n"{transcript}"\n\n_Answer:_\n{response}'
+                    transcript_output = f'_Транскрипт:_\n"{transcript}"\n\n_Ответить:_\n{response}'
                     chunks = self.split_into_chunks(transcript_output)
 
                     for index, transcript_chunk in enumerate(chunks):
@@ -336,8 +348,9 @@ class ChatGPTTelegramBot:
         """
         if not await self.check_allowed_and_within_budget(update, context):
             return
-        
-        logging.info(f'New message received from user {update.message.from_user.name} (id: {update.message.from_user.id})')
+
+        logging.info(
+            f'Новое сообщение, полученное от пользователя {update.message.from_user.name} (id: {update.message.from_user.id})')
         chat_id = update.effective_chat.id
         user_id = update.message.from_user.id
         prompt = update.message.text
@@ -349,9 +362,10 @@ class ChatGPTTelegramBot:
                 prompt = prompt[len(trigger_keyword):].strip()
             else:
                 if update.message.reply_to_message and update.message.reply_to_message.from_user.id == context.bot.id:
-                    logging.info('Message is a reply to the bot, allowing...')
+                    logging.info('Сообщение - это ответ боту, позволяющий...')
                 else:
-                    logging.warning('Message does not start with trigger keyword, ignoring...')
+                    logging.warning(
+                        'Сообщение не начинается с ключевого слова, игнорирование...')
                     return
 
         try:
@@ -359,7 +373,8 @@ class ChatGPTTelegramBot:
                 await context.bot.send_chat_action(chat_id=chat_id, action=constants.ChatAction.TYPING)
                 is_group_chat = self.is_group_chat(update)
 
-                stream_response = self.openai.get_chat_response_stream(chat_id=chat_id, query=prompt)
+                stream_response = self.openai.get_chat_response_stream(
+                    chat_id=chat_id, query=prompt)
                 i = 0
                 prev = ''
                 sent_message = None
@@ -390,9 +405,11 @@ class ChatGPTTelegramBot:
 
                     if is_group_chat:
                         # group chats have stricter flood limits
-                        cutoff = 180 if len(content) > 1000 else 120 if len(content) > 200 else 90 if len(content) > 50 else 50
+                        cutoff = 180 if len(content) > 1000 else 120 if len(
+                            content) > 200 else 90 if len(content) > 50 else 50
                     else:
-                        cutoff = 90 if len(content) > 1000 else 45 if len(content) > 200 else 25 if len(content) > 50 else 15
+                        cutoff = 90 if len(content) > 1000 else 45 if len(
+                            content) > 200 else 25 if len(content) > 50 else 15
 
                     cutoff += backoff
 
@@ -466,11 +483,13 @@ class ChatGPTTelegramBot:
 
             try:
                 # add chat request to users usage tracker
-                self.usage[user_id].add_chat_tokens(total_tokens, self.config['token_price'])
+                self.usage[user_id].add_chat_tokens(
+                    total_tokens, self.config['token_price'])
                 # add guest chat request to guest usage tracker
                 allowed_user_ids = self.config['allowed_user_ids'].split(',')
                 if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
-                    self.usage["guests"].add_chat_tokens(total_tokens, self.config['token_price'])
+                    self.usage["guests"].add_chat_tokens(
+                        total_tokens, self.config['token_price'])
             except:
                 pass
 
@@ -523,7 +542,7 @@ class ChatGPTTelegramBot:
                 parse_mode=constants.ParseMode.MARKDOWN if markdown else None
             )
         except telegram.error.BadRequest as e:
-            if str(e).startswith("Message is not modified"):
+            if str(e).startswith("Сообщение не изменено"):
                 return
             try:
                 await context.bot.edit_message_text(
@@ -532,7 +551,8 @@ class ChatGPTTelegramBot:
                     text=text
                 )
             except Exception as e:
-                logging.warning(f'Failed to edit message: {str(e)}')
+                logging.warning(
+                    f'Не удалось отредактировать сообщение: {str(e)}')
                 raise e
 
         except Exception as e:
@@ -545,7 +565,8 @@ class ChatGPTTelegramBot:
         """
         task = context.application.create_task(coroutine(), update=update)
         while not task.done():
-            context.application.create_task(update.effective_chat.send_action(chat_action))
+            context.application.create_task(
+                update.effective_chat.send_action(chat_action))
             try:
                 await asyncio.wait_for(asyncio.shield(task), 4.5)
             except asyncio.TimeoutError:
@@ -574,7 +595,7 @@ class ChatGPTTelegramBot:
         """
         Handles errors in the telegram-python-bot library.
         """
-        logging.error(f'Exception while handling an update: {context.error}')
+        logging.error(f'Исключение при обработке обновления: {context.error}')
 
     def is_group_chat(self, update: Update) -> bool:
         """
@@ -606,10 +627,10 @@ class ChatGPTTelegramBot:
         """
         if self.config['allowed_user_ids'] == '*':
             return True
-        
+
         if self.is_admin(update):
             return True
-        
+
         allowed_user_ids = self.config['allowed_user_ids'].split(',')
         # Check if user is allowed
         if str(update.message.from_user.id) in allowed_user_ids:
@@ -620,10 +641,11 @@ class ChatGPTTelegramBot:
             admin_user_ids = self.config['admin_user_ids'].split(',')
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
                 if await self.is_user_in_group(update, context, user):
-                    logging.info(f'{user} is a member. Allowing group chat message...')
+                    logging.info(
+                        f'{user} является членом группы. Разрешение сообщений группового чата...')
                     return True
-            logging.info(f'Group chat messages from user {update.message.from_user.name} '
-                f'(id: {update.message.from_user.id}) are not allowed')
+            logging.info(f'Сообщения группового чата от пользователя {update.message.from_user.name} '
+                         f'(id: {update.message.from_user.id}) не допускаются')
 
         return False
 
@@ -633,7 +655,7 @@ class ChatGPTTelegramBot:
         The first user in the user list is the admin.
         """
         if self.config['admin_user_ids'] == '-':
-            logging.info('No admin user defined.')
+            logging.info('Пользователь-администратор не определен.')
             return False
 
         admin_user_ids = self.config['admin_user_ids'].split(',')
@@ -647,7 +669,8 @@ class ChatGPTTelegramBot:
     async def get_remaining_budget(self, update: Update) -> float:
         user_id = update.message.from_user.id
         if user_id not in self.usage:
-            self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
+            self.usage[user_id] = UsageTracker(
+                user_id, update.message.from_user.name)
 
         if self.is_admin(update):
             return float('inf')
@@ -662,7 +685,8 @@ class ChatGPTTelegramBot:
             user_budgets = self.config['monthly_user_budgets'].split(',')
             # check if user is included in budgets list
             if len(user_budgets) <= user_index:
-                logging.warning(f'No budget set for user: {update.message.from_user.name} ({user_id}).')
+                logging.warning(
+                    f'Не установлен бюджет для пользователя : {update.message.from_user.name} ({user_id}).')
                 return 0.0
             user_budget = float(user_budgets[user_index])
             cost_month = self.usage[user_id].get_current_cost()[1]
@@ -678,7 +702,8 @@ class ChatGPTTelegramBot:
         """
         user_id = update.message.from_user.id
         if user_id not in self.usage:
-            self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
+            self.usage[user_id] = UsageTracker(
+                user_id, update.message.from_user.name)
 
         if self.is_admin(update):
             return True
@@ -693,7 +718,8 @@ class ChatGPTTelegramBot:
             user_budgets = self.config['monthly_user_budgets'].split(',')
             # check if user is included in budgets list
             if len(user_budgets) <= user_index:
-                logging.warning(f'No budget set for user: {update.message.from_user.name} ({user_id}).')
+                logging.warning(
+                    f'No budget set for user: {update.message.from_user.name} ({user_id}).')
                 return False
             user_budget = float(user_budgets[user_index])
             cost_month = self.usage[user_id].get_current_cost()[1]
@@ -706,13 +732,15 @@ class ChatGPTTelegramBot:
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
                 if await self.is_user_in_group(update, context, user):
                     if 'guests' not in self.usage:
-                        self.usage['guests'] = UsageTracker('guests', 'all guest users in group chats')
+                        self.usage['guests'] = UsageTracker(
+                            'guests', 'все гостевые пользователи в групповых чатах')
                     if self.config['monthly_guest_budget'] >= self.usage['guests'].get_current_cost()[1]:
                         return True
-                    logging.warning('Monthly guest budget for group chats used up.')
+                    logging.warning(
+                        'Израсходован месячный гостевой бюджет для групповых чатов.')
                     return False
-            logging.info(f'Group chat messages from user {update.message.from_user.name} '
-                f'(id: {update.message.from_user.id}) are not allowed')
+            logging.info(f'Сообщения группового чата от пользователя {update.message.from_user.name} '
+                         f'(id: {update.message.from_user.id}) не допускаются')
         return False
 
     async def check_allowed_and_within_budget(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
@@ -723,14 +751,14 @@ class ChatGPTTelegramBot:
         :return: Boolean indicating if the user is allowed to use the bot
         """
         if not await self.is_allowed(update, context):
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
-                f'is not allowed to use the bot')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права использовать бота')
             await self.send_disallowed_message(update, context)
             return False
 
         if not await self.is_within_budget(update, context):
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
-                f'reached their usage limit')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'достиг лимита использования')
             await self.send_budget_reached_message(update, context)
             return False
 
@@ -770,7 +798,8 @@ class ChatGPTTelegramBot:
             filters.AUDIO | filters.VOICE | filters.Document.AUDIO |
             filters.VIDEO | filters.VIDEO_NOTE | filters.Document.VIDEO,
             self.transcribe))
-        application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.prompt))
+        application.add_handler(MessageHandler(
+            filters.TEXT & (~filters.COMMAND), self.prompt))
         application.add_handler(InlineQueryHandler(self.inline_query, chat_types=[
             constants.ChatType.GROUP, constants.ChatType.SUPERGROUP
         ]))
