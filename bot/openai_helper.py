@@ -104,7 +104,7 @@ class OpenAIHelper:
         tokens_used = str(self.__count_tokens(self.conversations[chat_id]))
 
         if self.config['show_usage']:
-            answer += f"\n\n---\n💰 Tokens used: {tokens_used}"
+            answer += f"\n\n---\n💰 Используемые токены: {tokens_used}"
 
         yield answer, tokens_used
 
@@ -129,15 +129,15 @@ class OpenAIHelper:
             exceeded_max_history_size = len(self.conversations[chat_id]) > self.config['max_history_size']
 
             if exceeded_max_tokens or exceeded_max_history_size:
-                logging.info(f'Chat history for chat ID {chat_id} is too long. Summarising...')
+                logging.info(f'История чатов для ID чата {chat_id} слишком длинный. Подведение итогов...')
                 try:
                     summary = await self.__summarise(self.conversations[chat_id][:-1])
-                    logging.debug(f'Summary: {summary}')
+                    logging.debug(f'Резюме: {summary}')
                     self.reset_chat_history(chat_id)
                     self.__add_to_history(chat_id, role="assistant", content=summary)
                     self.__add_to_history(chat_id, role="user", content=query)
                 except Exception as e:
-                    logging.warning(f'Error while summarising chat history: {str(e)}. Popping elements instead...')
+                    logging.warning(f'Ошибка при подведении итогов истории чатов: {str(e)}. Выскакивающие элементы вместо...')
                     self.conversations[chat_id] = self.conversations[chat_id][-self.config['max_history_size']:]
 
             return await openai.ChatCompletion.acreate(
@@ -152,13 +152,13 @@ class OpenAIHelper:
             )
 
         except openai.error.RateLimitError as e:
-            raise Exception(f'⚠️ _OpenAI Rate Limit exceeded_ ⚠️\n{str(e)}') from e
+            raise Exception(f'⚠️ Превышен предел скорости _OpenAI Rate Limit. ⚠️\n{str(e)}') from e
 
         except openai.error.InvalidRequestError as e:
-            raise Exception(f'⚠️ _OpenAI Invalid request_ ⚠️\n{str(e)}') from e
+            raise Exception(f'⚠️ OpenAI Неверный запрос ⚠️\n{str(e)}') from e
 
         except Exception as e:
-            raise Exception(f'⚠️ _An error has occurred_ ⚠️\n{str(e)}') from e
+            raise Exception(f'⚠️ Произошла ошибка ⚠️\n{str(e)}') from e
 
     async def generate_image(self, prompt: str) -> tuple[str, str]:
         """
@@ -174,12 +174,12 @@ class OpenAIHelper:
             )
 
             if 'data' not in response or len(response['data']) == 0:
-                logging.error(f'No response from GPT: {str(response)}')
-                raise Exception('⚠️ _An error has occurred_ ⚠️\nPlease try again in a while.')
+                logging.error(f'Нет ответа от GPT: {str(response)}')
+                raise Exception('⚠️ Произошла ошибка ⚠️\nПожалуйста, повторите попытку через некоторое время.')
 
             return response['data'][0]['url'], self.config['image_size']
         except Exception as e:
-            raise Exception(f'⚠️ _An error has occurred_ ⚠️\n{str(e)}') from e
+            raise Exception(f'⚠️ Произошла ошибка ⚠️\n{str(e)}') from e
 
     async def transcribe(self, filename):
         """
@@ -191,7 +191,7 @@ class OpenAIHelper:
                 return result.text
         except Exception as e:
             logging.exception(e)
-            raise Exception(f'⚠️ _An error has occurred_ ⚠️\n{str(e)}') from e
+            raise Exception(f'⚠️ Произошла ошибка ⚠️\n{str(e)}') from e
 
     def reset_chat_history(self, chat_id, content=''):
         """
@@ -230,7 +230,7 @@ class OpenAIHelper:
         :return: The summary
         """
         messages = [
-            { "role": "assistant", "content": "Summarize this conversation in 700 characters or less" },
+            { "role": "assistant", "content": "Резюмируйте этот разговор в 700 символах или меньше" },
             { "role": "user", "content": str(conversation) }
         ]
         response = await openai.ChatCompletion.acreate(
@@ -248,7 +248,7 @@ class OpenAIHelper:
         if self.config['model'] in GPT_4_32K_MODELS:
             return 32768
         raise NotImplementedError(
-            f"Max tokens for model {self.config['model']} is not implemented yet."
+            f"Максимальное количество токенов для модели {self.config['model']} пока не реализовано."
         )
 
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
