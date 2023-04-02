@@ -122,9 +122,6 @@ class ChatGPTTelegramBot:
             text_budget += f"В этом месяце у вас остался бюджет в размере ${budget:.2f}.\n"
         # add OpenAI account information for admin request
         if self.is_admin(update):
-            grant_balance = self.openai.get_grant_balance()
-            if grant_balance > 0.0:
-                text_budget += f"Ваш оставшийся баланс гранта OpenAI составляет ${grant_balance:.2f}.\n"
             text_budget += f"На ваш счет в OpenAI был выставлен счет ${self.openai.get_billing_current_month():.2f} this month."
 
         usage_text = text_current_conversation + text_today + text_month + text_budget
