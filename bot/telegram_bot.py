@@ -172,6 +172,7 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'пытается добавить уже добавленного пользователя')
+            return
 
         accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + \
             message_text(update.message)
@@ -195,6 +196,7 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'пытается добавить уже добавленного администратора')
+            return
 
         accounts['ADMIN_USER_IDS'] += ',' + \
             message_text(update.message)
