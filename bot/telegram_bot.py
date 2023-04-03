@@ -155,20 +155,49 @@ class ChatGPTTelegramBot:
             message.text = self.last_message.pop(chat_id)
 
         await self.prompt(update=update, context=context)
-    # Ф
 
-    async def addUser(self, user_id):
+    async def addUser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not await self.is_admin(update, context):
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права добавлять пользователей')
+            return
+
+        chat_id = update.effective_chat.id
+
         with open('accounts.json', 'r') as file:
             accounts = json.load(file)
-        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + user_id
+
+        if message_text(update.message) in accounts['ALLOWED_TELEGRAM_USER_IDS']:
+            await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'пытается добавить уже добавленного пользователя')
+
+        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + \
+            message_text(update.message)
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
 
-    async def addAdmin(self, user_id):
+    async def addAdmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not await self.is_admin(update, context):
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права добавлять администраторов')
+            return
+
+        chat_id = update.effective_chat.id
+
         with open('accounts.json', 'r') as file:
             accounts = json.load(file)
-        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + user_id
+
+        if message_text(update.message) in accounts['ADMIN_USER_IDS']:
+            await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'пытается добавить уже добавленного администратора')
+
+        accounts['ADMIN_USER_IDS'] += ',' + \
+            message_text(update.message)
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
