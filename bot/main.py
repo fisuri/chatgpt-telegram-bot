@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 
 from dotenv import load_dotenv
 
@@ -45,11 +46,14 @@ def main():
         'presence_penalty': float(os.environ.get('PRESENCE_PENALTY', 0.0)),
         'frequency_penalty': float(os.environ.get('FREQUENCY_PENALTY', 0.0)),
     }
+    # Подключение файла accounts.json
+    with open('accounts.json', 'r') as file:
+        accounts = json.load(file)
 
     telegram_config = {
         'token': os.environ['TELEGRAM_BOT_TOKEN'],
-        'admin_user_ids': os.environ.get('ADMIN_USER_IDS', '-'),
-        'allowed_user_ids': os.environ.get('ALLOWED_TELEGRAM_USER_IDS', '*'),
+        'admin_user_ids': accounts["ADMIN_USER_IDS"],
+        'allowed_user_ids': accounts["ALLOWED_TELEGRAM_USER_IDS"],
         'enable_image_generation': os.environ.get('ENABLE_IMAGE_GENERATION', 'true').lower() == 'true',
         'enable_transcription': os.environ.get('ENABLE_TRANSCRIPTION', 'true').lower() == 'true',
         'monthly_user_budgets': os.environ.get('MONTHLY_USER_BUDGETS', '*'),
