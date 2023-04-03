@@ -123,7 +123,6 @@ class ChatGPTTelegramBot:
         # add OpenAI account information for admin request
         if self.is_admin(update):
             text_budget += f"На ваш счет в OpenAI был выставлен счет ${self.openai.get_billing_current_month():.2f} в этом месяце."
-
         usage_text = text_current_conversation + text_today + text_month + text_budget
         await update.message.reply_text(usage_text, parse_mode=constants.ParseMode.MARKDOWN)
 
