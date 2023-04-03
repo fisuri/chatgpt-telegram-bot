@@ -45,9 +45,9 @@ class ChatGPTTelegramBot:
         self.openai = openai
         self.commands = [
             BotCommand(command='help', description='Показать справку'),
-            BotCommand(command='addUser',
+            BotCommand(command='adduser',
                        description='Добавить нового пользователя'),
-            BotCommand(command='addAdmin',
+            BotCommand(command='addadmin',
                        description='Добавить нового админа'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
             BotCommand(command='image',
@@ -156,9 +156,11 @@ class ChatGPTTelegramBot:
 
         await self.prompt(update=update, context=context)
 
-    async def addUser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Добавить пользователя
 
-        if not await self.is_admin(update, context):
+    async def adduser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not self.is_admin(update):
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять пользователей')
             return
@@ -177,12 +179,16 @@ class ChatGPTTelegramBot:
         accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + \
             message_text(update.message)
 
+        self.config['allowed_user_ids'] += ',' + message_text(update.message)
+
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
 
-    async def addAdmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Добавить администратора
 
-        if not await self.is_admin(update, context):
+    async def addadmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not self.is_admin(update):
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять администраторов')
             return
@@ -200,6 +206,8 @@ class ChatGPTTelegramBot:
 
         accounts['ADMIN_USER_IDS'] += ',' + \
             message_text(update.message)
+
+        self.config['admin_user_ids'] += ',' + message_text(update.message)
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
