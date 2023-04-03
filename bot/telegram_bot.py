@@ -2,6 +2,7 @@ import logging
 import os
 import itertools
 import asyncio
+import json
 
 import telegram
 from telegram import constants
@@ -44,9 +45,13 @@ class ChatGPTTelegramBot:
         self.openai = openai
         self.commands = [
             BotCommand(command='help', description='Показать справку'),
+            BotCommand(command='adduser',
+                       description='Добавить нового пользователя'),
+            BotCommand(command='addadmin',
+                       description='Добавить нового админа'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
-            BotCommand(
-                command='image', description='Генерация изображения из промта'),
+            BotCommand(command='image',
+                       description='Генерация изображения из промта'),
             BotCommand(command='stats',
                        description='Показать статистику текущего использования'),
             BotCommand(command='resend',
@@ -150,6 +155,62 @@ class ChatGPTTelegramBot:
             message.text = self.last_message.pop(chat_id)
 
         await self.prompt(update=update, context=context)
+
+    # Добавить пользователя
+
+    async def adduser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not self.is_admin(update):
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права добавлять пользователей')
+            return
+
+        chat_id = update.effective_chat.id
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        if message_text(update.message) in accounts['ALLOWED_TELEGRAM_USER_IDS']:
+            await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'пытается добавить уже добавленного пользователя')
+            return
+
+        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + \
+            message_text(update.message)
+
+        self.config['allowed_user_ids'] += ',' + message_text(update.message)
+
+        with open('accounts.json', 'w') as file:
+            json.dump(accounts, file, ensure_ascii=False, indent=4)
+
+    # Добавить администратора
+
+    async def addadmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not self.is_admin(update):
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права добавлять администраторов')
+            return
+
+        chat_id = update.effective_chat.id
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        if message_text(update.message) in accounts['ADMIN_USER_IDS']:
+            await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'пытается добавить уже добавленного администратора')
+            return
+
+        accounts['ADMIN_USER_IDS'] += ',' + \
+            message_text(update.message)
+
+        self.config['admin_user_ids'] += ',' + message_text(update.message)
+
+        with open('accounts.json', 'w') as file:
+            json.dump(accounts, file, ensure_ascii=False, indent=4)
 
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -796,6 +857,8 @@ class ChatGPTTelegramBot:
 
         application.add_handler(CommandHandler('reset', self.reset))
         application.add_handler(CommandHandler('help', self.help))
+        application.add_handler(CommandHandler('adduser', self.adduser))
+        application.add_handler(CommandHandler('addadmin', self.addadmin))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
