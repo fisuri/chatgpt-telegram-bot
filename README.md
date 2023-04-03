@@ -28,7 +28,7 @@
   - Если у вас есть доступ к API GPT-4, просто измените параметр `OPENAI_MODEL` на `gpt-4`
 
 ## Дополнительные функции - требуются помощь!
-If you'd like to help, check out the [issues](https://github.com/n3d1117/chatgpt-telegram-bot/issues) section and contribute!
+If you'd like to help, check out the [issues](https://github.com/fisuri/chatgpt-telegram-bot/issues) section and contribute!
 
 PR всегда приветствуются!
 
@@ -52,7 +52,7 @@ PR всегда приветствуются!
 ### Настройка
 | Параметр                          | Описание                                                                                                                                                                                                                      | Значение по умолчанию                  |
 |------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|
-| `ENABLE_QUOTING`                   | Whether to enable message quoting in private chats                                                                                                                                                                               | true                           |
+| `ENABLE_QUOTING`                   | Цитирование сообщений в личных чатах                                                                                                                                                                               | true                           |
 | `ENABLE_IMAGE_GENERATION`          | Включить генерацию изображений с помощью команды `/image`                                                                                                                                                                      | true                           |
 | `ENABLE_TRANSCRIPTION`             | Включить транскрибирование аудио- и видеосообщений                                                                                                                                                                     | true                           |
 | `MONTHLY_USER_BUDGETS`             | Список чисел через запятую, определяющих месячный бюджет по расходам на OpenAI API для каждого пользователя из списка `ALLOWED_TELEGRAM_USER_IDS`. **Примечание**: по умолчанию *нет* ограничений ни для кого (`*`)                                   | `*`                            |
@@ -82,7 +82,7 @@ PR всегда приветствуются!
 Клонируйте репозиторий и перейдите в директорию проекта:
 
 ```shell
-git clone https://github.com/n3d1117/chatgpt-telegram-bot.git
+git clone https://github.com/fisuri/chatgpt-telegram-bot.git
 cd chatgpt-telegram-bot
 ```
 
