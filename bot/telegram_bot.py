@@ -808,6 +808,8 @@ class ChatGPTTelegramBot:
 
         application.add_handler(CommandHandler('reset', self.reset))
         application.add_handler(CommandHandler('help', self.help))
+        application.add_handler(CommandHandler('addUser', self.addUser))
+        application.add_handler(CommandHandler('addAdmin', self.addAdmin))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
