@@ -2,6 +2,7 @@ import logging
 import os
 import itertools
 import asyncio
+import json
 
 import telegram
 from telegram import constants
@@ -44,9 +45,13 @@ class ChatGPTTelegramBot:
         self.openai = openai
         self.commands = [
             BotCommand(command='help', description='Показать справку'),
+            BotCommand(command='addUser',
+                       description='Добавить нового пользователя'),
+            BotCommand(command='addAdmin',
+                       description='Добавить нового админа'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
-            BotCommand(
-                command='image', description='Генерация изображения из промта'),
+            BotCommand(command='image',
+                       description='Генерация изображения из промта'),
             BotCommand(command='stats',
                        description='Показать статистику текущего использования'),
             BotCommand(command='resend',
@@ -150,6 +155,23 @@ class ChatGPTTelegramBot:
             message.text = self.last_message.pop(chat_id)
 
         await self.prompt(update=update, context=context)
+    # Ф
+
+    async def addUser(self, user_id):
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + user_id
+
+        with open('accounts.json', 'w') as file:
+            json.dump(accounts, file, ensure_ascii=False, indent=4)
+
+    async def addAdmin(self, user_id):
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + user_id
+
+        with open('accounts.json', 'w') as file:
+            json.dump(accounts, file, ensure_ascii=False, indent=4)
 
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
