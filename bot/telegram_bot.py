@@ -52,8 +52,8 @@ class ChatGPTTelegramBot:
             BotCommand(command='resend',
                        description='Повторная отправка последнего сообщения')
         ]
-        self.disallowed_message = "Sorry, you are not allowed to use this bot. You can check out the source code at "
-        self.budget_limit_message = "Sorry, you have reached your monthly usage limit."
+        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri"
+        self.budget_limit_message = "Извините, вы достигли месячного лимита использования."
         self.usage = {}
         self.last_message = {}
 
