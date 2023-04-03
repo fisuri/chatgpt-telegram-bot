@@ -48,7 +48,11 @@ class ChatGPTTelegramBot:
             BotCommand(command='adduser',
                        description='Добавить нового пользователя'),
             BotCommand(command='addadmin',
-                       description='Добавить нового админа'),
+                       description='Добавить нового администратора'),
+            BotCommand(command='removeuser',
+                       description='Удалить пользователя'),
+            BotCommand(command='removeadmin',
+                       description='Удалить администратора'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
             BotCommand(command='image',
                        description='Генерация изображения из промта'),
@@ -161,6 +165,7 @@ class ChatGPTTelegramBot:
     async def adduser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять пользователей')
             return
@@ -172,7 +177,7 @@ class ChatGPTTelegramBot:
 
         if message_text(update.message) in accounts['ALLOWED_TELEGRAM_USER_IDS']:
             await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
-            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'пытается добавить уже добавленного пользователя')
             return
 
@@ -184,11 +189,14 @@ class ChatGPTTelegramBot:
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
 
+        await context.bot.send_message(chat_id=chat_id, text='Пользователь успешно добавлен')
+
     # Добавить администратора
 
     async def addadmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять администраторов')
             return
@@ -200,7 +208,7 @@ class ChatGPTTelegramBot:
 
         if message_text(update.message) in accounts['ADMIN_USER_IDS']:
             await context.bot.send_message(chat_id=chat_id, text='Пользователь уже добавлен')
-            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'пытается добавить уже добавленного администратора')
             return
 
@@ -211,6 +219,72 @@ class ChatGPTTelegramBot:
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
+
+        await context.bot.send_message(chat_id=chat_id, text='Администратор успешно добавлен')
+
+    # удаление пользователя
+
+    async def removeuser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права удалять пользователей')
+            return
+
+        chat_id = update.effective_chat.id
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        if not message_text(update.message) in accounts['ALLOWED_TELEGRAM_USER_IDS']:
+            await context.bot.send_message(chat_id=chat_id, text='Пользователь не найден')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'пытается удалить не существующего пользователя')
+            return
+
+        accounts['ALLOWED_TELEGRAM_USER_IDS'].replace(
+            ',' + message_text(update.message), '')
+
+        self.config['allowed_user_ids'].replace(
+            ',' + message_text(update.message), '')
+
+        with open('accounts.json', 'w') as file:
+            json.dump(accounts, file, ensure_ascii=False, indent=4)
+
+        await context.bot.send_message(chat_id=chat_id, text='Пользователь успешно удален')
+
+    # удаление администратора
+
+    async def removeadmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права удалять администраторов')
+            return
+
+        chat_id = update.effective_chat.id
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        if not message_text(update.message) in accounts['ADMIN_USER_IDS']:
+            await context.bot.send_message(chat_id=chat_id, text='Администратор не найден')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'пытается удалить не существующего пользователя')
+            return
+
+        accounts['ADMIN_USER_IDS'].replace(
+            ',' + message_text(update.message), '')
+
+        self.config['admin_user_ids'].replace(
+            ',' + message_text(update.message), '')
+
+        with open('accounts.json', 'w') as file:
+            json.dump(accounts, file, ensure_ascii=False, indent=4)
+
+        await context.bot.send_message(chat_id=chat_id, text='Администратор успешно удален')
 
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -859,6 +933,9 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler('help', self.help))
         application.add_handler(CommandHandler('adduser', self.adduser))
         application.add_handler(CommandHandler('addadmin', self.addadmin))
+        application.add_handler(CommandHandler('removeuser', self.removeuser))
+        application.add_handler(CommandHandler(
+            'removeadmin', self.removeadmin))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
