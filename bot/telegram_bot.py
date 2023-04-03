@@ -167,7 +167,7 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
         reset_content = message_text(update.message)
         self.openai.reset_chat_history(chat_id=chat_id, content=reset_content)
-        await context.bot.send_message(chat_id=chat_id, text='Done!')
+        await context.bot.send_message(chat_id=chat_id, text='Выполнено!')
 
     async def image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
