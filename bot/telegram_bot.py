@@ -243,10 +243,10 @@ class ChatGPTTelegramBot:
                             f'пытается удалить не существующего пользователя')
             return
 
-        accounts['ALLOWED_TELEGRAM_USER_IDS'].replace(
+        accounts['ALLOWED_TELEGRAM_USER_IDS'] = accounts['ALLOWED_TELEGRAM_USER_IDS'].replace(
             ',' + message_text(update.message), '')
 
-        self.config['allowed_user_ids'].replace(
+        self.config['allowed_user_ids'] = self.config['allowed_user_ids'].replace(
             ',' + message_text(update.message), '')
 
         with open('accounts.json', 'w') as file:
@@ -275,10 +275,10 @@ class ChatGPTTelegramBot:
                             f'пытается удалить не существующего пользователя')
             return
 
-        accounts['ADMIN_USER_IDS'].replace(
+        accounts['ADMIN_USER_IDS'] = accounts['ADMIN_USER_IDS'].replace(
             ',' + message_text(update.message), '')
 
-        self.config['admin_user_ids'].replace(
+        self.config['admin_user_ids'] = self.config['admin_user_ids'].replace(
             ',' + message_text(update.message), '')
 
         with open('accounts.json', 'w') as file:
