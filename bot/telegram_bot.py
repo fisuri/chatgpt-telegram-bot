@@ -170,6 +170,12 @@ class ChatGPTTelegramBot:
                             f'не имеет права добавлять пользователей')
             return
 
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID пользователя')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID пользователя')
+            return
+
         chat_id = update.effective_chat.id
 
         with open('accounts.json', 'r') as file:
@@ -199,6 +205,12 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять администраторов')
+            return
+
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID администратора')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID администратора')
             return
 
         chat_id = update.effective_chat.id
@@ -231,6 +243,12 @@ class ChatGPTTelegramBot:
                             f'не имеет права удалять пользователей')
             return
 
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID пользователя')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID пользователя')
+            return
+
         chat_id = update.effective_chat.id
 
         with open('accounts.json', 'r') as file:
@@ -260,6 +278,12 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права удалять администраторов')
+            return
+
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID администратора')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID администратора')
             return
 
         chat_id = update.effective_chat.id
