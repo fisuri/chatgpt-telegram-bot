@@ -181,10 +181,10 @@ class ChatGPTTelegramBot:
                             f'пытается добавить уже добавленного пользователя')
             return
 
-        accounts['ALLOWED_TELEGRAM_USER_IDS'] += ',' + \
-            message_text(update.message)
+        accounts['ALLOWED_TELEGRAM_USER_IDS'].append(
+            message_text(update.message))
 
-        self.config['allowed_user_ids'] += ',' + message_text(update.message)
+        self.config['allowed_user_ids'].append(message_text(update.message))
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
@@ -212,10 +212,9 @@ class ChatGPTTelegramBot:
                             f'пытается добавить уже добавленного администратора')
             return
 
-        accounts['ADMIN_USER_IDS'] += ',' + \
-            message_text(update.message)
+        accounts['ADMIN_USER_IDS'].append(message_text(update.message))
 
-        self.config['admin_user_ids'] += ',' + message_text(update.message)
+        self.config['admin_user_ids'].append(message_text(update.message))
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
@@ -243,11 +242,10 @@ class ChatGPTTelegramBot:
                             f'пытается удалить не существующего пользователя')
             return
 
-        accounts['ALLOWED_TELEGRAM_USER_IDS'] = accounts['ALLOWED_TELEGRAM_USER_IDS'].replace(
-            ',' + message_text(update.message), '')
+        accounts['ALLOWED_TELEGRAM_USER_IDS'].remove(
+            message_text(update.message))
 
-        self.config['allowed_user_ids'] = self.config['allowed_user_ids'].replace(
-            ',' + message_text(update.message), '')
+        self.config['allowed_user_ids'].remove(message_text(update.message))
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
@@ -275,11 +273,9 @@ class ChatGPTTelegramBot:
                             f'пытается удалить не существующего пользователя')
             return
 
-        accounts['ADMIN_USER_IDS'] = accounts['ADMIN_USER_IDS'].replace(
-            ',' + message_text(update.message), '')
+        accounts['ADMIN_USER_IDS'].remove(message_text(update.message))
 
-        self.config['admin_user_ids'] = self.config['admin_user_ids'].replace(
-            ',' + message_text(update.message), '')
+        self.config['admin_user_ids'].remove(message_text(update.message))
 
         with open('accounts.json', 'w') as file:
             json.dump(accounts, file, ensure_ascii=False, indent=4)
@@ -333,7 +329,7 @@ class ChatGPTTelegramBot:
                 self.usage[user_id].add_image_request(
                     image_size, self.config['image_prices'])
                 # add guest chat request to guest usage tracker
-                if str(user_id) not in self.config['allowed_user_ids'].split(',') and 'guests' in self.usage:
+                if str(user_id) not in self.config['allowed_user_ids'] and 'guests' in self.usage:
                     self.usage["guests"].add_image_request(
                         image_size, self.config['image_prices'])
 
@@ -414,7 +410,7 @@ class ChatGPTTelegramBot:
                     audio_track.duration_seconds, transcription_price)
 
                 # add guest chat request to guest usage tracker
-                allowed_user_ids = self.config['allowed_user_ids'].split(',')
+                allowed_user_ids = self.config['allowed_user_ids']
                 if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
                     self.usage["guests"].add_transcription_seconds(
                         audio_track.duration_seconds, transcription_price)
@@ -617,7 +613,7 @@ class ChatGPTTelegramBot:
                 self.usage[user_id].add_chat_tokens(
                     total_tokens, self.config['token_price'])
                 # add guest chat request to guest usage tracker
-                allowed_user_ids = self.config['allowed_user_ids'].split(',')
+                allowed_user_ids = self.config['allowed_user_ids']
                 if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
                     self.usage["guests"].add_chat_tokens(
                         total_tokens, self.config['token_price'])
@@ -762,14 +758,14 @@ class ChatGPTTelegramBot:
         if self.is_admin(update):
             return True
 
-        allowed_user_ids = self.config['allowed_user_ids'].split(',')
+        allowed_user_ids = self.config['allowed_user_ids']
         # Check if user is allowed
         if str(update.message.from_user.id) in allowed_user_ids:
             return True
 
         # Check if it's a group a chat with at least one authorized member
         if self.is_group_chat(update):
-            admin_user_ids = self.config['admin_user_ids'].split(',')
+            admin_user_ids = self.config['admin_user_ids']
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
                 if await self.is_user_in_group(update, context, user):
                     logging.info(
@@ -785,11 +781,11 @@ class ChatGPTTelegramBot:
         Checks if the user is the admin of the bot.
         The first user in the user list is the admin.
         """
-        if self.config['admin_user_ids'] == '-':
+        if self.config['admin_user_ids'][0] == '-':
             logging.info('Пользователь-администратор не определен.')
             return False
 
-        admin_user_ids = self.config['admin_user_ids'].split(',')
+        admin_user_ids = self.config['admin_user_ids']
 
         # Check if user is in the admin user list
         if str(update.message.from_user.id) in admin_user_ids:
@@ -809,7 +805,7 @@ class ChatGPTTelegramBot:
         if self.config['monthly_user_budgets'] == '*':
             return float('inf')
 
-        allowed_user_ids = self.config['allowed_user_ids'].split(',')
+        allowed_user_ids = self.config['allowed_user_ids']
         if str(user_id) in allowed_user_ids:
             # find budget for allowed user
             user_index = allowed_user_ids.index(str(user_id))
@@ -842,7 +838,7 @@ class ChatGPTTelegramBot:
         if self.config['monthly_user_budgets'] == '*':
             return True
 
-        allowed_user_ids = self.config['allowed_user_ids'].split(',')
+        allowed_user_ids = self.config['allowed_user_ids']
         if str(user_id) in allowed_user_ids:
             # find budget for allowed user
             user_index = allowed_user_ids.index(str(user_id))
@@ -859,7 +855,7 @@ class ChatGPTTelegramBot:
 
         # Check if group member is within budget
         if self.is_group_chat(update):
-            admin_user_ids = self.config['admin_user_ids'].split(',')
+            admin_user_ids = self.config['admin_user_ids']
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
                 if await self.is_user_in_group(update, context, user):
                     if 'guests' not in self.usage:
