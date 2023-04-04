@@ -164,13 +164,19 @@ class ChatGPTTelegramBot:
 
     async def adduser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+        chat_id = update.effective_chat.id
+
         if not self.is_admin(update):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять пользователей')
             return
 
-        chat_id = update.effective_chat.id
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID пользователя')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID пользователя')
+            return
 
         with open('accounts.json', 'r') as file:
             accounts = json.load(file)
@@ -195,13 +201,19 @@ class ChatGPTTelegramBot:
 
     async def addadmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+        chat_id = update.effective_chat.id
+
         if not self.is_admin(update):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять администраторов')
             return
 
-        chat_id = update.effective_chat.id
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID администратора')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID администратора')
+            return
 
         with open('accounts.json', 'r') as file:
             accounts = json.load(file)
@@ -225,13 +237,19 @@ class ChatGPTTelegramBot:
 
     async def removeuser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+        chat_id = update.effective_chat.id
+
         if not self.is_admin(update):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права удалять пользователей')
             return
 
-        chat_id = update.effective_chat.id
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID пользователя')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID пользователя')
+            return
 
         with open('accounts.json', 'r') as file:
             accounts = json.load(file)
@@ -256,13 +274,19 @@ class ChatGPTTelegramBot:
 
     async def removeadmin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+        chat_id = update.effective_chat.id
+
         if not self.is_admin(update):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права удалять администраторов')
             return
 
-        chat_id = update.effective_chat.id
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите ID администратора')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел ID администратора')
+            return
 
         with open('accounts.json', 'r') as file:
             accounts = json.load(file)
