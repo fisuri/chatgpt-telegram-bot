@@ -41,6 +41,7 @@ PR всегда приветствуются!
 
 ### Конфигурация
 Скопируйте `accounts.json.example` и переименуйте его в `accounts.json`.
+
 Настройте конфигурацию, скопировав файл `.env.example` и переименовав его в `.env` а затем отредактируйте необходимые параметры по желанию:
 
 | Параметр                   | Описание                                                                                                                                                                                                                   |
@@ -116,7 +117,7 @@ pip install -r requirements.txt
 python bot/main.py
 ```
 
-#### Используя Docker Compose\n\nЗапустите следующую команду для сборки и запуска Docker image:
+#### Используя Docker Compose Запустите следующую команду для сборки и запуска Docker image:
 ```shell
 docker compose up
 ```
