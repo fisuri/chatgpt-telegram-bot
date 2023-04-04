@@ -88,7 +88,7 @@ PR всегда приветствуются!
 Клонируйте репозиторий и перейдите в директорию проекта:
 
 ```shell
-git clone https://github.com/fisuri/chatgpt-telegram-bot.git
+git clone https://github.com/fisuri/chatgpt-telegram-bot.git -b main
 cd chatgpt-telegram-bot
 ```
 
