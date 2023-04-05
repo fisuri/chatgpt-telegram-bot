@@ -56,6 +56,8 @@ class ChatGPTTelegramBot:
                        description='Удалить администратора'),
             BotCommand(command='list_users',
                        description='Список пользователей'),
+            BotCommand(command='send_message_to_all_users',
+                       description='Отправить сообщение всем пользователям'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
             BotCommand(command='image',
                        description='Генерация изображения из промта'),
@@ -323,6 +325,32 @@ class ChatGPTTelegramBot:
 
         user_list = '\n'.join(accounts['ALLOWED_TELEGRAM_USER_IDS'])
         await context.bot.send_message(chat_id=chat_id, text=f'Список разрешенных пользователей:\n{user_list}')
+    
+    async def send_message_to_all_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+        chat_id = update.effective_chat.id
+
+        # проверка на администратора
+        if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права отправлять сообщения пользователям')
+            return
+
+        if message_text(update.message) == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите текст сообщения, которое нужно отправить пользователям')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел текст сообщения, которое нужно отправить пользователям')
+            return
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        # отправляем сообщение всем пользователям
+        for user_id in accounts['ALLOWED_TELEGRAM_USER_IDS']:
+            await context.bot.send_message(chat_id=user_id, text=message_text(update.message))
+
+        await context.bot.send_message(chat_id=chat_id, text='Сообщение отправлено всем пользователям')
     
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -975,6 +1003,7 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler(
             'removeadmin', self.removeadmin))
         application.add_handler(CommandHandler('list_users', self.list_users))
+        application.add_handler(CommandHandler('send_message_to_all_users', self.send_message_to_all_users))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
