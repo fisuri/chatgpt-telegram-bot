@@ -54,6 +54,8 @@ class ChatGPTTelegramBot:
                        description='Удалить пользователя'),
             BotCommand(command='removeadmin',
                        description='Удалить администратора'),
+            BotCommand(command='list_users',
+                       description='Список пользователей'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
             BotCommand(command='image',
                        description='Генерация изображения из промта'),
@@ -307,6 +309,21 @@ class ChatGPTTelegramBot:
 
         await context.bot.send_message(chat_id=chat_id, text='Администратор успешно удален')
 
+    async def list_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        chat_id = update.effective_chat.id
+        
+        if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту команду.')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права на просмотр списка пользователей.')
+            return
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        user_list = '\n'.join(accounts['ALLOWED_TELEGRAM_USER_IDS'])
+        await context.bot.send_message(chat_id=chat_id, text=f'Список разрешенных пользователей:\n{user_list}')
+    
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Resets the conversation.
@@ -957,6 +974,7 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler('removeuser', self.removeuser))
         application.add_handler(CommandHandler(
             'removeadmin', self.removeadmin))
+        application.add_handler(CommandHandler('list_users', self.list_users))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
