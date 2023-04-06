@@ -837,6 +837,8 @@ class ChatGPTTelegramBot:
         if self.is_group_chat(update):
             admin_user_ids = self.config['admin_user_ids']
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
+                if not user.strip():
+                    continue
                 if await self.is_user_in_group(update, context, user):
                     logging.info(
                         f'{user} является членом группы. Разрешение сообщений группового чата...')
@@ -927,6 +929,8 @@ class ChatGPTTelegramBot:
         if self.is_group_chat(update):
             admin_user_ids = self.config['admin_user_ids']
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
+                if not user.strip():
+                    continue
                 if await self.is_user_in_group(update, context, user):
                     if 'guests' not in self.usage:
                         self.usage['guests'] = UsageTracker(
