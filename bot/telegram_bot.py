@@ -66,11 +66,11 @@ class ChatGPTTelegramBot:
             BotCommand(command='resend',
                        description='Повторная отправка последнего сообщения')
         ]
-        
+
         self.group_commands = [
             BotCommand(command='chat', description='Общайтесь с ботом!')
         ] + self.commands
-        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri" \
+        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri"
         self.budget_limit_message = "Извините, вы достигли месячного лимита использования."
         self.usage = {}
         self.last_message = {}
@@ -79,8 +79,10 @@ class ChatGPTTelegramBot:
         """
         Shows the help menu.
         """
-        commands = self.group_commands if self.is_group_chat(update) else self.commands
-        commands_description = [f'/{command.command} - {command.description}' for command in commands]
+        commands = self.group_commands if self.is_group_chat(
+            update) else self.commands
+        commands_description = [
+            f'/{command.command} - {command.description}' for command in commands]
         help_text = 'Я бот ChatGPT, поговорите со мной!' + \
                     '\n\n' + \
                     '\n'.join(commands_description) + \
@@ -317,7 +319,7 @@ class ChatGPTTelegramBot:
 
     async def list_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
-        
+
         if not self.is_admin(update):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту команду.')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
@@ -329,7 +331,7 @@ class ChatGPTTelegramBot:
 
         user_list = '\n'.join(accounts['ALLOWED_TELEGRAM_USER_IDS'])
         await context.bot.send_message(chat_id=chat_id, text=f'Список разрешенных пользователей:\n{user_list}')
-    
+
     async def send_message_to_all_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = update.effective_chat.id
@@ -355,7 +357,7 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=user_id, text=message_text(update.message))
 
         await context.bot.send_message(chat_id=chat_id, text='Сообщение отправлено всем пользователям')
-    
+
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Resets the conversation.
@@ -498,7 +500,8 @@ class ChatGPTTelegramBot:
                     for index, transcript_chunk in enumerate(chunks):
                         await context.bot.send_message(
                             chat_id=chat_id,
-                            reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                            reply_to_message_id=self.get_reply_to_message_id(
+                                update) if index == 0 else None,
                             text=transcript_chunk,
                             parse_mode=constants.ParseMode.MARKDOWN
                         )
@@ -521,7 +524,8 @@ class ChatGPTTelegramBot:
                     for index, transcript_chunk in enumerate(chunks):
                         await context.bot.send_message(
                             chat_id=chat_id,
-                            reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                            reply_to_message_id=self.get_reply_to_message_id(
+                                update) if index == 0 else None,
                             text=transcript_chunk,
                             parse_mode=constants.ParseMode.MARKDOWN
                         )
@@ -621,7 +625,8 @@ class ChatGPTTelegramBot:
                                                                  message_id=sent_message.message_id)
                             sent_message = await context.bot.send_message(
                                 chat_id=chat_id,
-                                reply_to_message_id=self.get_reply_to_message_id(update),
+                                reply_to_message_id=self.get_reply_to_message_id(
+                                    update),
                                 text=content
                             )
                         except:
@@ -666,7 +671,8 @@ class ChatGPTTelegramBot:
                         try:
                             await context.bot.send_message(
                                 chat_id=chat_id,
-                                reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                                reply_to_message_id=self.get_reply_to_message_id(
+                                    update) if index == 0 else None,
                                 text=chunk,
                                 parse_mode=constants.ParseMode.MARKDOWN
                             )
@@ -674,7 +680,8 @@ class ChatGPTTelegramBot:
                             try:
                                 await context.bot.send_message(
                                     chat_id=chat_id,
-                                    reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                                    reply_to_message_id=self.get_reply_to_message_id(
+                                        update) if index == 0 else None,
                                     text=chunk
                                 )
                             except Exception as e:
@@ -1008,7 +1015,8 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler(
             'removeadmin', self.removeadmin))
         application.add_handler(CommandHandler('list_users', self.list_users))
-        application.add_handler(CommandHandler('send_message_to_all_users', self.send_message_to_all_users))
+        application.add_handler(CommandHandler(
+            'send_message_to_all_users', self.send_message_to_all_users))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
