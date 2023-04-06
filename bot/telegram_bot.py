@@ -79,7 +79,8 @@ class ChatGPTTelegramBot:
         """
         Shows the help menu.
         """
-        commands = [f'/{command.command} - {command.description}' for command in self.commands]
+        commands = self.group_commands if self.is_group_chat(update) else self.commands
+        commands_description = [f'/{command.command} - {command.description}' for command in commands]
         help_text = 'Я бот ChatGPT, поговорите со мной!' + \
                     '\n\n' + \
                     '\n'.join(commands_description) + \
