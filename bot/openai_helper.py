@@ -66,7 +66,8 @@ class OpenAIHelper:
             for index, choice in enumerate(response.choices):
                 content = choice['message']['content'].strip()
                 if index == 0:
-                    self.__add_to_history(chat_id, role="assistant", content=content)
+                    self.__add_to_history(
+                        chat_id, role="assistant", content=content)
                 answer += f'{index + 1}\u20e3\n'
                 answer += content
                 answer += '\n\n'
@@ -125,19 +126,24 @@ class OpenAIHelper:
 
             # Summarize the chat history if it's too long to avoid excessive token usage
             token_count = self.__count_tokens(self.conversations[chat_id])
-            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.__max_model_tokens()
-            exceeded_max_history_size = len(self.conversations[chat_id]) > self.config['max_history_size']
+            exceeded_max_tokens = token_count + \
+                self.config['max_tokens'] > self.__max_model_tokens()
+            exceeded_max_history_size = len(
+                self.conversations[chat_id]) > self.config['max_history_size']
 
             if exceeded_max_tokens or exceeded_max_history_size:
-                logging.info(f'История чатов для ID чата {chat_id} слишком длинный. Подведение итогов...')
+                logging.info(
+                    f'История чатов для ID чата {chat_id} слишком длинный. Подведение итогов...')
                 try:
                     summary = await self.__summarise(self.conversations[chat_id][:-1])
                     logging.debug(f'Резюме: {summary}')
                     self.reset_chat_history(chat_id)
-                    self.__add_to_history(chat_id, role="assistant", content=summary)
+                    self.__add_to_history(
+                        chat_id, role="assistant", content=summary)
                     self.__add_to_history(chat_id, role="user", content=query)
                 except Exception as e:
-                    logging.warning(f'Ошибка при подведении итогов истории чатов: {str(e)}. Выскакивающие элементы вместо...')
+                    logging.warning(
+                        f'Ошибка при подведении итогов истории чатов: {str(e)}. Выскакивающие элементы вместо...')
                     self.conversations[chat_id] = self.conversations[chat_id][-self.config['max_history_size']:]
 
             return await openai.ChatCompletion.acreate(
@@ -152,7 +158,8 @@ class OpenAIHelper:
             )
 
         except openai.error.RateLimitError as e:
-            raise Exception(f'⚠️ Превышен предел скорости _OpenAI Rate Limit. ⚠️\n{str(e)}') from e
+            raise Exception(
+                f'⚠️ Превышен предел скорости _OpenAI Rate Limit. ⚠️\n{str(e)}') from e
 
         except openai.error.InvalidRequestError as e:
             raise Exception(f'⚠️ OpenAI Неверный запрос ⚠️\n{str(e)}') from e
@@ -175,7 +182,8 @@ class OpenAIHelper:
 
             if 'data' not in response or len(response['data']) == 0:
                 logging.error(f'Нет ответа от GPT: {str(response)}')
-                raise Exception('⚠️ Произошла ошибка ⚠️\nПожалуйста, повторите попытку через некоторое время.')
+                raise Exception(
+                    '⚠️ Произошла ошибка ⚠️\nПожалуйста, повторите попытку через некоторое время.')
 
             return response['data'][0]['url'], self.config['image_size']
         except Exception as e:
@@ -230,8 +238,9 @@ class OpenAIHelper:
         :return: The summary
         """
         messages = [
-            { "role": "assistant", "content": "Резюмируйте этот разговор в 700 символах или меньше" },
-            { "role": "user", "content": str(conversation) }
+            {"role": "assistant",
+                "content": "Резюмируйте этот разговор в 700 символах или меньше"},
+            {"role": "user", "content": str(conversation)}
         ]
         response = await openai.ChatCompletion.acreate(
             model=self.config['model'],
@@ -265,13 +274,15 @@ class OpenAIHelper:
             encoding = tiktoken.get_encoding("gpt-3.5-turbo")
 
         if model in GPT_3_MODELS:
-            tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
+            # every message follows <|start|>{role/name}\n{content}<|end|>\n
+            tokens_per_message = 4
             tokens_per_name = -1  # if there's a name, the role is omitted
         elif model in GPT_4_MODELS + GPT_4_32K_MODELS:
             tokens_per_message = 3
             tokens_per_name = 1
         else:
-            raise NotImplementedError(f"""num_tokens_from_messages() is not implemented for model {model}.""")
+            raise NotImplementedError(
+                f"""num_tokens_from_messages() is not implemented for model {model}.""")
         num_tokens = 0
         for message in messages:
             num_tokens += tokens_per_message
@@ -281,7 +292,7 @@ class OpenAIHelper:
                     num_tokens += tokens_per_name
         num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
         return num_tokens
-    
+
     def get_billing_current_month(self):
         """Gets billed usage for current month from OpenAI API.
 
@@ -299,7 +310,9 @@ class OpenAIHelper:
             "start_date": first_day,
             "end_date": last_day
         }
-        response = requests.get("https://api.openai.com/dashboard/billing/usage", headers=headers, params=params)
+        response = requests.get(
+            "https://api.openai.com/dashboard/billing/usage", headers=headers, params=params)
         billing_data = json.loads(response.text)
-        usage_month = billing_data["total_usage"] / 100 # convert cent amount to dollars
+        usage_month = billing_data["total_usage"] / \
+            100  # convert cent amount to dollars
         return usage_month
