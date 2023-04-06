@@ -6,7 +6,7 @@ import json
 
 import telegram
 from uuid import uuid4
-from telegram import constants
+from telegram import constants, BotCommandScopeAllGroupChats
 from telegram import Message, MessageEntity, Update, InlineQueryResultArticle, InputTextMessageContent, BotCommand, ChatMember
 from telegram.error import RetryAfter, TimedOut
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, \
@@ -66,7 +66,11 @@ class ChatGPTTelegramBot:
             BotCommand(command='resend',
                        description='Повторная отправка последнего сообщения')
         ]
-        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri"
+        
+        self.group_commands = [
+            BotCommand(command='chat', description='Общайтесь с ботом!')
+        ] + self.commands
+        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri" \
         self.budget_limit_message = "Извините, вы достигли месячного лимита использования."
         self.usage = {}
         self.last_message = {}
@@ -75,11 +79,10 @@ class ChatGPTTelegramBot:
         """
         Shows the help menu.
         """
-        commands = [
-            f'/{command.command} - {command.description}' for command in self.commands]
-        help_text = 'Я ChatGPT бот, поговори со мной!' + \
+        commands = [f'/{command.command} - {command.description}' for command in self.commands]
+        help_text = 'Я бот ChatGPT, поговорите со мной!' + \
                     '\n\n' + \
-                    '\n'.join(commands) + \
+                    '\n'.join(commands_description) + \
                     '\n\n' + \
                     'Пришлите мне голосовое сообщение или файл, и я расшифрую его для вас!'
         await update.message.reply_text(help_text, disable_web_page_preview=True)
@@ -550,7 +553,7 @@ class ChatGPTTelegramBot:
             f'Новое сообщение, полученное от пользователя {update.message.from_user.name} (id: {update.message.from_user.id})')
         chat_id = update.effective_chat.id
         user_id = update.message.from_user.id
-        prompt = update.message.text
+        prompt = message_text(update.message)
         self.last_message[chat_id] = prompt
 
         if self.is_group_chat(update):
@@ -981,6 +984,7 @@ class ChatGPTTelegramBot:
         """
         Post initialization hook for the bot.
         """
+        await application.bot.set_my_commands(self.group_commands, scope=BotCommandScopeAllGroupChats())
         await application.bot.set_my_commands(self.commands)
 
     def run(self):
@@ -1008,6 +1012,9 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
         application.add_handler(CommandHandler('resend', self.resend))
+        application.add_handler(CommandHandler(
+            'chat', self.prompt, filters=filters.ChatType.GROUP | filters.ChatType.SUPERGROUP)
+        )
         application.add_handler(MessageHandler(
             filters.AUDIO | filters.VOICE | filters.Document.AUDIO |
             filters.VIDEO | filters.VIDEO_NOTE | filters.Document.VIDEO,
