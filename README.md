@@ -1,6 +1,6 @@
 # Чат-бот Telegram ChatGPT
 ![python-version](https://img.shields.io/badge/python-3.9-blue.svg)
-[![openai-version](https://img.shields.io/badge/openai-0.27.2-orange.svg)](https://openai.com/)
+[![openai-version](https://img.shields.io/badge/openai-0.27.4-orange.svg)](https://openai.com/)
 [![license](https://img.shields.io/badge/License-GPL%202.0-brightgreen.svg)](LICENSE)
 [![Publish Docker image](https://github.com/n3d1117/chatgpt-telegram-bot/actions/workflows/publish.yaml/badge.svg)](https://github.com/n3d1117/chatgpt-telegram-bot/actions/workflows/publish.yaml)
 
@@ -51,7 +51,9 @@ PR всегда приветствуются!
 | `ADMIN_USER_IDS`            | Идентификаторы пользователей Telegram администраторов. У этих пользователей есть доступ к особым командам администратора, информации и безоговорочных ограничений бюджета. ID администратора не нужно добавлять в `ALLOWED_TELEGRAM_USER_IDS`. **Обратите внимание**: по умолчанию отсутствуют админы ('-'). |
 | `ALLOWED_TELEGRAM_USER_IDS` | Список идентификаторов пользователей Telegram через запятую, которые могут взаимодействовать с ботом (используйте [getidsbot](https://t.me/getidsbot), чтобы найти идентификатор вашего пользователя). **Внимание**: по умолчанию для всех разрешено (`*`).                       |
 
-### Настройка
+### Дополнительная конфигурация
+Следующие параметры являются необязательными и могут быть заданы в файле `.env`:
+
 | Параметр                          | Описание                                                                                                                                                                                                                      | Значение по умолчанию                  |
 |------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|
 | `ENABLE_QUOTING`                   | Цитирование сообщений в личных чатах                                                                                                                                                                               | true                           |
