@@ -56,6 +56,8 @@ class ChatGPTTelegramBot:
                        description='Удалить администратора'),
             BotCommand(command='list_users',
                        description='Список пользователей'),
+            BotCommand(command='send_message_to_all',
+                       description='Отправить сообщение всем пользователям и администраторам'),
             BotCommand(command='send_message_to_all_users',
                        description='Отправить сообщение всем пользователям'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
@@ -70,7 +72,7 @@ class ChatGPTTelegramBot:
         self.group_commands = [
             BotCommand(command='chat', description='Общайтесь с ботом!')
         ] + self.commands
-        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri"
+        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri или @Ayrony1"
         self.budget_limit_message = "Извините, вы достигли месячного лимита использования."
         self.usage = {}
         self.last_message = {}
@@ -332,6 +334,35 @@ class ChatGPTTelegramBot:
         user_list = '\n'.join(accounts['ALLOWED_TELEGRAM_USER_IDS'])
         await context.bot.send_message(chat_id=chat_id, text=f'Список разрешенных пользователей:\n{user_list}')
 
+    async def send_message_to_all(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        chat_id = update.effective_chat.id
+
+        # Проверка на администратора
+        if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права отправлять сообщения пользователям и администраторам')
+            return
+
+        # Проверяем, что введен текст
+        message = message_text(update.message)
+        if message == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите текст сообщения, которое нужно отправить пользователям и администраторам')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел текст сообщения, которое нужно отправить пользователям и администраторам')
+            return
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        # Отправляем сообщение всем пользователям и администраторам
+        all_allowed_ids = accounts['ALLOWED_TELEGRAM_USER_IDS'] + \
+            accounts['ADMIN_USER_IDS']
+        for user_id in all_allowed_ids:
+            await context.bot.send_message(chat_id=user_id, text=message)
+
+        await context.bot.send_message(chat_id=chat_id, text='Сообщение отправлено всем пользователям и администраторам')
+
     async def send_message_to_all_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = update.effective_chat.id
@@ -374,7 +405,7 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
         reset_content = message_text(update.message)
         self.openai.reset_chat_history(chat_id=chat_id, content=reset_content)
-        await context.bot.send_message(chat_id=chat_id, text='Выполнено!')
+        await context.bot.send_message(chat_id=chat_id, text='Выполнено, кожаный мешок!')
 
     async def image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -1015,6 +1046,8 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler(
             'removeadmin', self.removeadmin))
         application.add_handler(CommandHandler('list_users', self.list_users))
+        application.add_handler(CommandHandler(
+            'send_message_to_all', self.send_message_to_all))
         application.add_handler(CommandHandler(
             'send_message_to_all_users', self.send_message_to_all_users))
         application.add_handler(CommandHandler('image', self.image))
