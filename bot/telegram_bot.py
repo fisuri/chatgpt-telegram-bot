@@ -85,7 +85,7 @@ class ChatGPTTelegramBot:
         self.group_commands = [
             BotCommand(command='chat', description='Общайтесь с ботом!')
         ] + self.commands
-        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri или @Ayrony1"
+        self.disallowed_message = "В данный момент бот закрыт для общего пользования, для получения доступа обратитесь к администратору @fisuri или @Ayrony1"
         self.budget_limit_message = f"Извините, вы достигли предела использования{self.budget_print_map[config['budget_period']]}."
         self.usage = {}
         self.last_message = {}
