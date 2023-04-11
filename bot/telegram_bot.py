@@ -38,10 +38,10 @@ class ChatGPTTelegramBot:
     """
     # Mapping of budget period to cost period
     budget_cost_map = {
-        "monthly": "cost_month",
-        "daily": "cost_today",
-        "all-time": "cost_all_time"
-    }
+            "monthly":"cost_month",
+            "daily":"cost_today",
+            "all-time":"cost_all_time"
+        }
     # Mapping of budget period to a print output
     budget_print_map = {
         "monthly": " this month",
@@ -930,6 +930,14 @@ class ChatGPTTelegramBot:
         # no budget restrictions for admins and '*'-budget lists
         if self.is_admin(update) or self.config['user_budgets'] == '*':
             return float('inf')
+        
+        user_budgets = self.config['user_budgets'].split(',')
+        if self.config['allowed_user_ids'] == '*':
+            # same budget for all users, use value in first position of budget list
+            if len(user_budgets) > 1:
+                logging.warning('multiple values for budgets set with unrestricted user list '
+                                'only the first value is used as budget for everyone.')
+            return float(user_budgets[0])
 
         user_budgets = self.config['user_budgets'].split(',')
         if self.config['allowed_user_ids'] == '*':
