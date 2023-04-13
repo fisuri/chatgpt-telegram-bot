@@ -38,10 +38,10 @@ class ChatGPTTelegramBot:
     """
     # Mapping of budget period to cost period
     budget_cost_map = {
-            "monthly":"cost_month",
-            "daily":"cost_today",
-            "all-time":"cost_all_time"
-        }
+        "monthly": "cost_month",
+        "daily": "cost_today",
+        "all-time": "cost_all_time"
+    }
     # Mapping of budget period to a print output
     budget_print_map = {
         "monthly": " this month",
@@ -706,7 +706,10 @@ class ChatGPTTelegramBot:
                         total_tokens = int(tokens)
 
             else:
+                total_tokens = 0
+
                 async def _reply():
+                    nonlocal total_tokens
                     response, total_tokens = await self.openai.get_chat_response(chat_id=chat_id, query=prompt)
 
                     # Split into chunks of 4096 characters (Telegram's message limit)
@@ -743,7 +746,9 @@ class ChatGPTTelegramBot:
                 if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
                     self.usage["guests"].add_chat_tokens(
                         total_tokens, self.config['token_price'])
-            except:
+            except Exception as e:
+                logging.warning(
+                    f'Не удалось добавить токены в usage_logs: {str(e)}')
                 pass
 
         except Exception as e:
@@ -930,7 +935,7 @@ class ChatGPTTelegramBot:
         # no budget restrictions for admins and '*'-budget lists
         if self.is_admin(update) or self.config['user_budgets'] == '*':
             return float('inf')
-        
+
         user_budgets = self.config['user_budgets'].split(',')
         if self.config['allowed_user_ids'] == '*':
             # same budget for all users, use value in first position of budget list
