@@ -183,39 +183,13 @@ class ChatGPTTelegramBot:
         usage_text = text_current_conversation + text_today + text_month + text_budget
         await update.message.reply_text(usage_text, parse_mode=constants.ParseMode.MARKDOWN)
 
-    async def resend(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Resend the last request
-        """
-        if not await self.is_allowed(update, context):
-            logging.warning(f'Пользователь {update.message.from_user.name}  (id: {update.message.from_user.id})'
-                            f' не имеет права повторно отправлять сообщение')
-            await self.send_disallowed_message(update, context)
-            return
-
-        chat_id = update.effective_chat.id
-        if chat_id not in self.last_message:
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id})'
-                            f' does not have anything to resend')
-            await context.bot.send_message(chat_id=chat_id,
-                                           text=localized_text('resend_failed', self.config['bot_language']))
-            return
-
-        # Update message text, clear self.last_message and send the request to prompt
-        logging.info(f'Повторная отправка последней подсказки от пользователя: {update.message.from_user.name} '
-                     f'(id: {update.message.from_user.id})')
-        with update.message._unfrozen() as message:
-            message.text = self.last_message.pop(chat_id)
-
-        await self.prompt(update=update, context=context)
-
     # Добавить пользователя
 
     async def adduser(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = update.effective_chat.id
 
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять пользователей')
@@ -252,7 +226,7 @@ class ChatGPTTelegramBot:
 
         chat_id = update.effective_chat.id
 
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права добавлять администраторов')
@@ -288,7 +262,7 @@ class ChatGPTTelegramBot:
 
         chat_id = update.effective_chat.id
 
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права удалять пользователей')
@@ -325,7 +299,7 @@ class ChatGPTTelegramBot:
 
         chat_id = update.effective_chat.id
 
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права удалять администраторов')
@@ -358,7 +332,7 @@ class ChatGPTTelegramBot:
     async def list_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
 
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту команду.')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права на просмотр списка пользователей.')
@@ -374,7 +348,7 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
 
         # Проверка на администратора
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права отправлять сообщения пользователям и администраторам')
@@ -404,7 +378,7 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
 
         # проверка на администратора
-        if not self.is_admin(update):
+        if not self.is_admin(user_id=int(update.message.from_user.id)):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
                             f'не имеет права отправлять сообщения пользователям')
@@ -424,6 +398,32 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=user_id, text=message_text(update.message))
 
         await context.bot.send_message(chat_id=chat_id, text='Сообщение отправлено всем пользователям')
+
+    async def resend(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Resend the last request
+        """
+        if not await self.is_allowed(update, context):
+            logging.warning(f'Пользователь {update.message.from_user.name}  (id: {update.message.from_user.id})'
+                            f' не имеет права повторно отправлять сообщение')
+            await self.send_disallowed_message(update, context)
+            return
+
+        chat_id = update.effective_chat.id
+        if chat_id not in self.last_message:
+            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id})'
+                            f' does not have anything to resend')
+            await context.bot.send_message(chat_id=chat_id,
+                                           text=localized_text('resend_failed', self.config['bot_language']))
+            return
+
+        # Update message text, clear self.last_message and send the request to prompt
+        logging.info(f'Повторная отправка последней подсказки от пользователя: {update.message.from_user.name} '
+                     f'(id: {update.message.from_user.id})')
+        with update.message._unfrozen() as message:
+            message.text = self.last_message.pop(chat_id)
+
+        await self.prompt(update=update, context=context)
 
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """

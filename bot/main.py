@@ -24,7 +24,7 @@ def main():
         value for value in required_values if os.environ.get(value) is None]
     if len(missing_values) > 0:
         logging.error(
-            f'The following environment values are missing in your .env: {", ".join(missing_values)}')
+            f'В вашем .env отсутствуют следующие значения окружения: {", ".join(missing_values)}')
         exit(1)
 
     # Setup configurations
@@ -47,6 +47,7 @@ def main():
         'frequency_penalty': float(os.environ.get('FREQUENCY_PENALTY', 0.0)),
         'bot_language': os.environ.get('BOT_LANGUAGE', 'en'),
     }
+
     # Подключение файла accounts.json
     with open('accounts.json', 'r') as file:
         accounts = json.load(file)

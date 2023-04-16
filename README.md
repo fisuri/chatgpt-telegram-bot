@@ -10,28 +10,28 @@
 ![demo](https://user-images.githubusercontent.com/11541888/225114786-0d639854-b3e1-4214-b49a-e51ce8c40387.png)
 
 ## Features
-- [x] Support markdown in answers
-- [x] Reset conversation with the `/reset` command
-- [x] Typing indicator while generating a response
-- [x] Access can be restricted by specifying a list of allowed users
-- [x] Docker and Proxy support
-- [x] (NEW!) Image generation using DALL·E via the `/image` command
-- [x] (NEW!) Transcribe audio and video messages using Whisper (may require [ffmpeg](https://ffmpeg.org))
-- [x] (NEW!) Automatic conversation summary to avoid excessive token usage
-- [x] (NEW!) Track token usage per user - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] (NEW!) Get personal token usage statistics and cost per day/month via the `/stats` command - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] (NEW!) User budgets and guest budgets - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] (NEW!) Stream support
-- [x] (NEW!) GPT-4 support
-  - If you have access to the GPT-4 API, simply change the `OPENAI_MODEL` parameter to `gpt-4`
-- [x] (NEW!) Localized bot language
-  - Available languages :gb: :de: :ru: :tr: :it: :es: :indonesia:
-- [x] (NEW!) Improved inline queries support for group and private chats - by [@bugfloyd](https://github.com/bugfloyd)
-  - To use this feature, enable inline queries for your bot in BotFather via the `/setinline` [command](https://core.telegram.org/bots/inline)
+- [x] Поддержка разметки в ответах
+- [x] Сброс разговора с помощью команды `/reset`.
+- [x] Индикатор набора текста при генерации ответа
+- [x] Доступ можно ограничить, указав список разрешенных пользователей
+- [x] Поддержка Docker и прокси
+- [x] (NEW!) Создание изображений с помощью DALL-E через команду `/image`
+- [x] (NEW!) Расшифровка аудио- и видеосообщений с помощью Whisper (может потребоваться [ffmpeg](https://ffmpeg.org))
+- [x] (NEW!) Автоматическое подведение итогов разговора во избежание чрезмерного использования токенов
+- [x] (NEW!) Отслеживать использование токенов по каждому пользователю - [@AlexHTW](https://github.com/AlexHTW)
+- [x] (NEW!) Получите статистику использования персонального токена и стоимость в день/месяц с помощью команды `/stats` - [@AlexHTW](https://github.com/AlexHTW)
+- [x] (NEW!) Бюджеты пользователей и бюджеты гостей - [@AlexHTW](https://github.com/AlexHTW)
+- [x] (NEW!) Поддержка потока
+- [x] (NEW!) Поддержка GPT-4
+  - Если у вас есть доступ к API GPT-4, просто измените параметр `OPENAI_MODEL` на `gpt-4`
+- [x] (NEW!) Локализация языка бота
+  - Доступные языки :gb: :de: :ru: :tr: :it: :es: :indonesia:
+- [x] (NEW!) Улучшена поддержка встроенных запросов для групповых и приватных чатов - [@bugfloyd](https://github.com/bugfloyd)
+  - Чтобы использовать эту функцию, включите встроенные запросы для вашего бота в BotFather с помощью команды `/setinline` [command](https://core.telegram.org/bots/inline)
 
-## Additional features - help needed!
-If you'd like to help, check out the [issues](https://github.com/n3d1117/chatgpt-telegram-bot/issues) section and contribute!  
-If you want to help with translations, check out the [Translations Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219)
+## Дополнительные функции - нужна помощь!
+Если вы хотите помочь, ознакомьтесь с [issues](https://github.com/n3d1117/chatgpt-telegram-bot/issues) раздел и внести свой вклад!  
+Если вы хотите помочь с переводами, загляните в раздел [Translations Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219)
 
 PR всегда приветствуются!
 
@@ -91,7 +91,7 @@ PR всегда приветствуются!
 | `IMAGE_SIZE`                       | Размер генерируемого DALL-E изображения. Допустимые значения: `256x256`, `512x512` или `1024x1024`.                                                                                                                                                                                                                                                                                                   | `512x512`                      |
 | `GROUP_TRIGGER_KEYWORD`            | Если установлено, бот в групповых чатах будет отвечать только на сообщения, начинающиеся с этого ключевого слова                                                                                                                                                                                                                                                                                              | ""                             |
 | `IGNORE_GROUP_TRANSCRIPTIONS`      | Если установлено значение true, бот не будет обрабатывать транскрипции в групповых чатах.                                                                                                                                                                                                                                                                                                                 | `true`                         |
-| `BOT_LANGUAGE`                     | Language of general bot messages. Currently available: `en`, `de`, `ru`, `tr`, `it`, `es`, `id`.  **Note** [Contribute additional translations](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `en`                               |
+| `BOT_LANGUAGE`                     | Язык общих сообщений бота. В настоящее время доступны: `en`, `de`, `ru`, `tr`, `it`, `es`, `id`.  **Примечание** [Внесите дополнительные переводы](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `en`                               |
 
 Более подробную информацию можно найти в [официальном справочнике API](https://platform.openai.com/docs/api-reference/chat).
 
