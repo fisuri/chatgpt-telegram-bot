@@ -1072,13 +1072,13 @@ class ChatGPTTelegramBot:
         if self.is_admin(user_id):
             return True
         name = update.inline_query.from_user.name if is_inline else update.message.from_user.name
-        allowed_user_ids = self.config['allowed_user_ids'].split(',')
+        allowed_user_ids = self.config['allowed_user_ids']
         # Check if user is allowed
         if str(user_id) in allowed_user_ids:
             return True
         # Check if it's a group a chat with at least one authorized member
         if not is_inline and self.is_group_chat(update):
-            admin_user_ids = self.config['admin_user_ids'].split(',')
+            admin_user_ids = self.config['admin_user_ids']
             for user in itertools.chain(allowed_user_ids, admin_user_ids):
                 if await self.is_user_in_group(update, context, user):
                     logging.info(
