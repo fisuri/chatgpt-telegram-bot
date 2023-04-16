@@ -45,6 +45,7 @@ def main():
         'model': model,
         'presence_penalty': float(os.environ.get('PRESENCE_PENALTY', 0.0)),
         'frequency_penalty': float(os.environ.get('FREQUENCY_PENALTY', 0.0)),
+        'bot_language': os.environ.get('BOT_LANGUAGE', 'en'),
     }
     # Подключение файла accounts.json
     with open('accounts.json', 'r') as file:
@@ -55,10 +56,10 @@ def main():
     # remove support for old budget names at some point in the future
     if os.environ.get('MONTHLY_USER_BUDGETS') is not None:
         logging.warning('The environment variable MONTHLY_USER_BUDGETS is deprecated. '
-                     'Please use USER_BUDGETS with BUDGET_PERIOD instead.')
+                        'Please use USER_BUDGETS with BUDGET_PERIOD instead.')
     if os.environ.get('MONTHLY_GUEST_BUDGET') is not None:
         logging.warning('The environment variable MONTHLY_GUEST_BUDGET is deprecated. '
-                     'Please use GUEST_BUDGET with BUDGET_PERIOD instead.')
+                        'Please use GUEST_BUDGET with BUDGET_PERIOD instead.')
 
     telegram_config = {
         'token': os.environ['TELEGRAM_BOT_TOKEN'],
@@ -78,6 +79,7 @@ def main():
         'token_price': float(os.environ.get('TOKEN_PRICE', 0.002)),
         'image_prices': [float(i) for i in os.environ.get('IMAGE_PRICES', "0.016,0.018,0.02").split(",")],
         'transcription_price': float(os.environ.get('TOKEN_PRICE', 0.006)),
+        'bot_language': os.environ.get('BOT_LANGUAGE', 'en'),
     }
 
     # Setup and run ChatGPT and Telegram bot
