@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import os
 import itertools
@@ -6,7 +7,7 @@ import json
 
 import telegram
 from uuid import uuid4
-from telegram import constants
+from telegram import constants, BotCommandScopeAllGroupChats
 from telegram import Message, MessageEntity, Update, InlineQueryResultArticle, InputTextMessageContent, BotCommand, ChatMember
 from telegram.error import RetryAfter, TimedOut
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, \
@@ -35,6 +36,18 @@ class ChatGPTTelegramBot:
     """
     Class representing a ChatGPT Telegram Bot.
     """
+    # Mapping of budget period to cost period
+    budget_cost_map = {
+        "monthly": "cost_month",
+        "daily": "cost_today",
+        "all-time": "cost_all_time"
+    }
+    # Mapping of budget period to a print output
+    budget_print_map = {
+        "monthly": " this month",
+        "daily": " today",
+        "all-time": ""
+    }
 
     def __init__(self, config: dict, openai: OpenAIHelper):
         """
@@ -56,6 +69,8 @@ class ChatGPTTelegramBot:
                        description='Удалить администратора'),
             BotCommand(command='list_users',
                        description='Список пользователей'),
+            BotCommand(command='send_message_to_all',
+                       description='Отправить сообщение всем пользователям и администраторам'),
             BotCommand(command='send_message_to_all_users',
                        description='Отправить сообщение всем пользователям'),
             BotCommand(command='reset', description='Перезагрузить разговор'),
@@ -66,8 +81,12 @@ class ChatGPTTelegramBot:
             BotCommand(command='resend',
                        description='Повторная отправка последнего сообщения')
         ]
-        self.disallowed_message = "Извините, вам не разрешено использовать этого бота. Обратитесь к администратору @fisuri"
-        self.budget_limit_message = "Извините, вы достигли месячного лимита использования."
+
+        self.group_commands = [
+            BotCommand(command='chat', description='Общайтесь с ботом!')
+        ] + self.commands
+        self.disallowed_message = "В данный момент бот закрыт для общего пользования, для получения доступа обратитесь к администратору @fisuri или @Ayrony1"
+        self.budget_limit_message = f"Извините, вы достигли предела использования{self.budget_print_map[config['budget_period']]}."
         self.usage = {}
         self.last_message = {}
 
@@ -75,11 +94,13 @@ class ChatGPTTelegramBot:
         """
         Shows the help menu.
         """
-        commands = [
-            f'/{command.command} - {command.description}' for command in self.commands]
-        help_text = 'Я ChatGPT бот, поговори со мной!' + \
+        commands = self.group_commands if self.is_group_chat(
+            update) else self.commands
+        commands_description = [
+            f'/{command.command} - {command.description}' for command in commands]
+        help_text = 'Я бот ChatGPT, поговорите со мной!' + \
                     '\n\n' + \
-                    '\n'.join(commands) + \
+                    '\n'.join(commands_description) + \
                     '\n\n' + \
                     'Пришлите мне голосовое сообщение или файл, и я расшифрую его для вас!'
         await update.message.reply_text(help_text, disable_web_page_preview=True)
@@ -106,34 +127,35 @@ class ChatGPTTelegramBot:
         )
         images_today, images_month = self.usage[user_id].get_current_image_count(
         )
-        transcribe_durations = self.usage[user_id].get_current_transcription_duration(
-        )
-        cost_today, cost_month = self.usage[user_id].get_current_cost()
+        (transcribe_minutes_today, transcribe_seconds_today, transcribe_minutes_month,
+            transcribe_seconds_month) = self.usage[user_id].get_current_transcription_duration()
+        current_cost = self.usage[user_id].get_current_cost()
 
         chat_id = update.effective_chat.id
         chat_messages, chat_token_length = self.openai.get_conversation_stats(
             chat_id)
-        budget = await self.get_remaining_budget(update)
+        remaining_budget = self.get_remaining_budget(update)
 
         text_current_conversation = f"*Текущий разговор:*\n" +\
             f"{chat_messages} сообщения чата в истории.\n" +\
             f"{chat_token_length} токены чата в истории.\n" +\
             f"----------------------------\n"
-        text_today = f"*Usage today:*\n" +\
+        text_today = f"*Использование сегодня:*\n" +\
                      f"{tokens_today} используемые токены чата.\n" +\
                      f"{images_today} созданные изображения.\n" +\
-                     f"{transcribe_durations[0]} расшифровка минут и {transcribe_durations[1]} секунд.\n" +\
-                     f"💰 На общую сумму ${cost_today:.2f}\n" +\
+                     f"расшифровка {transcribe_minutes_today} минут и {transcribe_seconds_today} секунд.\n" +\
+                     f"💰 На общую сумму ${current_cost['cost_today']:.2f}\n" +\
                      f"----------------------------\n"
         text_month = f"*Использование в этом месяце:*\n" +\
                      f"{tokens_month} используемые токены чата.\n" +\
                      f"{images_month} созданные изображения.\n" +\
-                     f"{transcribe_durations[2]} расшифровка минут и {transcribe_durations[3]} секунд.\n" +\
-                     f"💰 На общую сумму ${cost_month:.2f}"
+                     f"расшифровка {transcribe_minutes_month} минут и {transcribe_seconds_month} секунд.\n" +\
+                     f"💰 На общую сумму ${current_cost['cost_month']:.2f}"
         # text_budget filled with conditional content
         text_budget = "\n\n"
-        if budget < float('inf'):
-            text_budget += f"В этом месяце у вас остался бюджет в размере ${budget:.2f}.\n"
+        budget_period = self.config['budget_period']
+        if remaining_budget < float('inf'):
+            text_budget += f"У вас есть оставшийся бюджет в размере ${remaining_budget:.2f}{self.budget_print_map[budget_period]}.\n"
         # add OpenAI account information for admin request
         if self.is_admin(update):
             text_budget += f"На ваш счет в OpenAI был выставлен счет ${self.openai.get_billing_current_month():.2f} в этом месяце."
@@ -313,7 +335,7 @@ class ChatGPTTelegramBot:
 
     async def list_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
-        
+
         if not self.is_admin(update):
             await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту команду.')
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
@@ -325,7 +347,36 @@ class ChatGPTTelegramBot:
 
         user_list = '\n'.join(accounts['ALLOWED_TELEGRAM_USER_IDS'])
         await context.bot.send_message(chat_id=chat_id, text=f'Список разрешенных пользователей:\n{user_list}')
-    
+
+    async def send_message_to_all(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        chat_id = update.effective_chat.id
+
+        # Проверка на администратора
+        if not self.is_admin(update):
+            await context.bot.send_message(chat_id=chat_id, text='У вас нет прав на эту комманду')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не имеет права отправлять сообщения пользователям и администраторам')
+            return
+
+        # Проверяем, что введен текст
+        message = message_text(update.message)
+        if message == '':
+            await context.bot.send_message(chat_id=chat_id, text='Введите текст сообщения, которое нужно отправить пользователям и администраторам')
+            logging.warning(f'Администратор {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'не ввел текст сообщения, которое нужно отправить пользователям и администраторам')
+            return
+
+        with open('accounts.json', 'r') as file:
+            accounts = json.load(file)
+
+        # Отправляем сообщение всем пользователям и администраторам
+        all_allowed_ids = accounts['ALLOWED_TELEGRAM_USER_IDS'] + \
+            accounts['ADMIN_USER_IDS']
+        for user_id in all_allowed_ids:
+            await context.bot.send_message(chat_id=user_id, text=message)
+
+        await context.bot.send_message(chat_id=chat_id, text='Сообщение отправлено всем пользователям и администраторам')
+
     async def send_message_to_all_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = update.effective_chat.id
@@ -351,7 +402,7 @@ class ChatGPTTelegramBot:
             await context.bot.send_message(chat_id=user_id, text=message_text(update.message))
 
         await context.bot.send_message(chat_id=chat_id, text='Сообщение отправлено всем пользователям')
-    
+
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Resets the conversation.
@@ -368,7 +419,7 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
         reset_content = message_text(update.message)
         self.openai.reset_chat_history(chat_id=chat_id, content=reset_content)
-        await context.bot.send_message(chat_id=chat_id, text='Выполнено!')
+        await context.bot.send_message(chat_id=chat_id, text='Выполнено, кожаный мешок!')
 
     async def image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -494,7 +545,8 @@ class ChatGPTTelegramBot:
                     for index, transcript_chunk in enumerate(chunks):
                         await context.bot.send_message(
                             chat_id=chat_id,
-                            reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                            reply_to_message_id=self.get_reply_to_message_id(
+                                update) if index == 0 else None,
                             text=transcript_chunk,
                             parse_mode=constants.ParseMode.MARKDOWN
                         )
@@ -517,7 +569,8 @@ class ChatGPTTelegramBot:
                     for index, transcript_chunk in enumerate(chunks):
                         await context.bot.send_message(
                             chat_id=chat_id,
-                            reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                            reply_to_message_id=self.get_reply_to_message_id(
+                                update) if index == 0 else None,
                             text=transcript_chunk,
                             parse_mode=constants.ParseMode.MARKDOWN
                         )
@@ -550,7 +603,7 @@ class ChatGPTTelegramBot:
             f'Новое сообщение, полученное от пользователя {update.message.from_user.name} (id: {update.message.from_user.id})')
         chat_id = update.effective_chat.id
         user_id = update.message.from_user.id
-        prompt = update.message.text
+        prompt = message_text(update.message)
         self.last_message[chat_id] = prompt
 
         if self.is_group_chat(update):
@@ -617,7 +670,8 @@ class ChatGPTTelegramBot:
                                                                  message_id=sent_message.message_id)
                             sent_message = await context.bot.send_message(
                                 chat_id=chat_id,
-                                reply_to_message_id=self.get_reply_to_message_id(update),
+                                reply_to_message_id=self.get_reply_to_message_id(
+                                    update),
                                 text=content
                             )
                         except:
@@ -652,7 +706,10 @@ class ChatGPTTelegramBot:
                         total_tokens = int(tokens)
 
             else:
+                total_tokens = 0
+
                 async def _reply():
+                    nonlocal total_tokens
                     response, total_tokens = await self.openai.get_chat_response(chat_id=chat_id, query=prompt)
 
                     # Split into chunks of 4096 characters (Telegram's message limit)
@@ -662,7 +719,8 @@ class ChatGPTTelegramBot:
                         try:
                             await context.bot.send_message(
                                 chat_id=chat_id,
-                                reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                                reply_to_message_id=self.get_reply_to_message_id(
+                                    update) if index == 0 else None,
                                 text=chunk,
                                 parse_mode=constants.ParseMode.MARKDOWN
                             )
@@ -670,7 +728,8 @@ class ChatGPTTelegramBot:
                             try:
                                 await context.bot.send_message(
                                     chat_id=chat_id,
-                                    reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                                    reply_to_message_id=self.get_reply_to_message_id(
+                                        update) if index == 0 else None,
                                     text=chunk
                                 )
                             except Exception as e:
@@ -687,7 +746,9 @@ class ChatGPTTelegramBot:
                 if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
                     self.usage["guests"].add_chat_tokens(
                         total_tokens, self.config['token_price'])
-            except:
+            except Exception as e:
+                logging.warning(
+                    f'Не удалось добавить токены в usage_logs: {str(e)}')
                 pass
 
         except Exception as e:
@@ -846,13 +907,14 @@ class ChatGPTTelegramBot:
 
         return False
 
-    def is_admin(self, update: Update) -> bool:
+    def is_admin(self, update: Update, log_no_admin=False) -> bool:
         """
         Checks if the user is the admin of the bot.
         The first user in the user list is the admin.
         """
-        if self.config['admin_user_ids'][0] == '-':
-            logging.info('Пользователь-администратор не определен.')
+        if self.config['admin_user_ids'] == '-':
+            if log_no_admin:
+                logging.info('Администратор не определен.')
             return False
 
         admin_user_ids = self.config['admin_user_ids']
@@ -863,82 +925,86 @@ class ChatGPTTelegramBot:
 
         return False
 
-    async def get_remaining_budget(self, update: Update) -> float:
+    def get_user_budget(self, update: Update) -> float | None:
+        """
+        Get the user's budget based on their user ID and the bot configuration.
+        :param update: Telegram update object
+        :return: The user's budget as a float, or None if the user is not found in the allowed user list
+        """
+
+        # no budget restrictions for admins and '*'-budget lists
+        if self.is_admin(update) or self.config['user_budgets'] == '*':
+            return float('inf')
+
+        user_budgets = self.config['user_budgets'].split(',')
+        if self.config['allowed_user_ids'] == '*':
+            # same budget for all users, use value in first position of budget list
+            if len(user_budgets) > 1:
+                logging.warning('multiple values for budgets set with unrestricted user list '
+                                'only the first value is used as budget for everyone.')
+            return float(user_budgets[0])
+
+        user_budgets = self.config['user_budgets'].split(',')
+        if self.config['allowed_user_ids'] == '*':
+            # same budget for all users, use value in first position of budget list
+            if len(user_budgets) > 1:
+                logging.warning('несколько значений для бюджетов, установленных с неограниченным списком пользователей '
+                                'только первое значение используется в качестве бюджета для всех.')
+            return float(user_budgets[0])
+
         user_id = update.message.from_user.id
-        if user_id not in self.usage:
-            self.usage[user_id] = UsageTracker(
-                user_id, update.message.from_user.name)
-
-        if self.is_admin(update):
-            return float('inf')
-
-        if self.config['monthly_user_budgets'] == '*':
-            return float('inf')
-
-        allowed_user_ids = self.config['allowed_user_ids']
+        allowed_user_ids = self.config['allowed_user_ids'].split(',')
         if str(user_id) in allowed_user_ids:
-            # find budget for allowed user
             user_index = allowed_user_ids.index(str(user_id))
-            user_budgets = self.config['monthly_user_budgets'].split(',')
-            # check if user is included in budgets list
             if len(user_budgets) <= user_index:
                 logging.warning(
-                    f'Не установлен бюджет для пользователя : {update.message.from_user.name} ({user_id}).')
+                    f'Не установлен бюджет для пользователя id: {user_id}. Список бюджетов короче списка пользователей.')
                 return 0.0
-            user_budget = float(user_budgets[user_index])
-            cost_month = self.usage[user_id].get_current_cost()[1]
-            remaining_budget = user_budget - cost_month
-            return remaining_budget
-        else:
-            return 0.0
+            return float(user_budgets[user_index])
+        return None
 
-    async def is_within_budget(self, update: Update, context: CallbackContext) -> bool:
+    def get_remaining_budget(self, update: Update) -> float:
         """
-        Checks if the user reached their monthly usage limit.
-        Initializes UsageTracker for user and guest when needed.
+        Calculate the remaining budget for a user based on their current usage.
+        :param update: Telegram update object
+        :return: The remaining budget for the user as a float
         """
         user_id = update.message.from_user.id
         if user_id not in self.usage:
             self.usage[user_id] = UsageTracker(
                 user_id, update.message.from_user.name)
 
-        if self.is_admin(update):
-            return True
+        # Get budget for users
+        user_budget = self.get_user_budget(update)
+        budget_period = self.config['budget_period']
+        if user_budget is not None:
+            cost = self.usage[user_id].get_current_cost(
+            )[self.budget_cost_map[budget_period]]
+            return user_budget - cost
 
-        if self.config['monthly_user_budgets'] == '*':
-            return True
+        # Get budget for guests
+        if 'guests' not in self.usage:
+            self.usage['guests'] = UsageTracker(
+                'guests', 'all guest users in group chats')
+        cost = self.usage['guests'].get_current_cost(
+        )[self.budget_cost_map[budget_period]]
+        return self.config['guest_budget'] - cost
 
-        allowed_user_ids = self.config['allowed_user_ids']
-        if str(user_id) in allowed_user_ids:
-            # find budget for allowed user
-            user_index = allowed_user_ids.index(str(user_id))
-            user_budgets = self.config['monthly_user_budgets'].split(',')
-            # check if user is included in budgets list
-            if len(user_budgets) <= user_index:
-                logging.warning(
-                    f'No budget set for user: {update.message.from_user.name} ({user_id}).')
-                return False
-            user_budget = float(user_budgets[user_index])
-            cost_month = self.usage[user_id].get_current_cost()[1]
-            # Check if allowed user is within budget
-            return user_budget > cost_month
+    def is_within_budget(self, update: Update) -> bool:
+        """
+        Checks if the user reached their usage limit.
+        Initializes UsageTracker for user and guest when needed.
+        :param update: Telegram update object
+        :return: Boolean indicating if the user has a positive budget
+        """
+        user_id = update.message.from_user.id
+        if user_id not in self.usage:
+            self.usage[user_id] = UsageTracker(
+                user_id, update.message.from_user.name)
 
-        # Check if group member is within budget
-        if self.is_group_chat(update):
-            admin_user_ids = self.config['admin_user_ids']
-            for user in itertools.chain(allowed_user_ids, admin_user_ids):
-                if await self.is_user_in_group(update, context, user):
-                    if 'guests' not in self.usage:
-                        self.usage['guests'] = UsageTracker(
-                            'guests', 'все гостевые пользователи в групповых чатах')
-                    if self.config['monthly_guest_budget'] >= self.usage['guests'].get_current_cost()[1]:
-                        return True
-                    logging.warning(
-                        'Израсходован месячный гостевой бюджет для групповых чатов.')
-                    return False
-            logging.info(f'Сообщения группового чата от пользователя {update.message.from_user.name} '
-                         f'(id: {update.message.from_user.id}) не допускаются')
-        return False
+        remaining_budget = self.get_remaining_budget(update)
+
+        return remaining_budget > 0
 
     async def check_allowed_and_within_budget(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
         """
@@ -953,9 +1019,9 @@ class ChatGPTTelegramBot:
             await self.send_disallowed_message(update, context)
             return False
 
-        if not await self.is_within_budget(update, context):
+        if not self.is_within_budget(update):
             logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id}) '
-                            f'достиг лимита использования')
+                            f'достигли лимита использования')
             await self.send_budget_reached_message(update, context)
             return False
 
@@ -981,6 +1047,7 @@ class ChatGPTTelegramBot:
         """
         Post initialization hook for the bot.
         """
+        await application.bot.set_my_commands(self.group_commands, scope=BotCommandScopeAllGroupChats())
         await application.bot.set_my_commands(self.commands)
 
     def run(self):
@@ -1003,11 +1070,17 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler(
             'removeadmin', self.removeadmin))
         application.add_handler(CommandHandler('list_users', self.list_users))
-        application.add_handler(CommandHandler('send_message_to_all_users', self.send_message_to_all_users))
+        application.add_handler(CommandHandler(
+            'send_message_to_all', self.send_message_to_all))
+        application.add_handler(CommandHandler(
+            'send_message_to_all_users', self.send_message_to_all_users))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
         application.add_handler(CommandHandler('resend', self.resend))
+        application.add_handler(CommandHandler(
+            'chat', self.prompt, filters=filters.ChatType.GROUP | filters.ChatType.SUPERGROUP)
+        )
         application.add_handler(MessageHandler(
             filters.AUDIO | filters.VOICE | filters.Document.AUDIO |
             filters.VIDEO | filters.VIDEO_NOTE | filters.Document.VIDEO,
