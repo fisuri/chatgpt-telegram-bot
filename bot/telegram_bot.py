@@ -1125,7 +1125,7 @@ class ChatGPTTelegramBot:
                                 'только первое значение используется в качестве бюджета для всех.')
             return float(user_budgets[0])
 
-        allowed_user_ids = self.config['allowed_user_ids'].split(',')
+        allowed_user_ids = self.config['allowed_user_ids']
         if str(user_id) in allowed_user_ids:
             user_index = allowed_user_ids.index(str(user_id))
             if len(user_budgets) <= user_index:
@@ -1212,7 +1212,7 @@ class ChatGPTTelegramBot:
             self.usage[user_id].add_chat_tokens(
                 used_tokens, self.config['token_price'])
             # add guest chat request to guest usage tracker
-            allowed_user_ids = self.config['allowed_user_ids'].split(',')
+            allowed_user_ids = self.config['allowed_user_ids']
             if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
                 self.usage["guests"].add_chat_tokens(
                     used_tokens, self.config['token_price'])
