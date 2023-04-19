@@ -25,7 +25,7 @@ A [Telegram bot](https://core.telegram.org/bots/api) that integrates with OpenAI
 - [x] (NEW!) Поддержка GPT-4
   - Если у вас есть доступ к API GPT-4, просто измените параметр `OPENAI_MODEL` на `gpt-4`
 - [x] (NEW!) Локализация языка бота
-  - Available languages :gb: :de: :ru: :tr: :it: :es: :indonesia: :netherlands: :cn:
+  - Доступные языки :gb: :de: :ru: :tr: :it: :es: :indonesia: :netherlands: :cn:
 - [x] (NEW!) Улучшена поддержка встроенных запросов для групповых и приватных чатов - [@bugfloyd](https://github.com/bugfloyd)
   - Чтобы использовать эту функцию, включите встроенные запросы для вашего бота в BotFather с помощью команды `/setinline` [command](https://core.telegram.org/bots/inline)
 
@@ -91,7 +91,7 @@ PR всегда приветствуются!
 | `IMAGE_SIZE`                       | The DALL·E generated image size. Allowed values: `256x256`, `512x512` or `1024x1024`                                                                                                                 | `512x512`                          |
 | `GROUP_TRIGGER_KEYWORD`            | If set, the bot in group chats will only respond to messages that start with this keyword                                                                                                            | -                                  |
 | `IGNORE_GROUP_TRANSCRIPTIONS`      | If set to true, the bot will not process transcriptions in group chats                                                                                                                               | `true`                             |
-| `BOT_LANGUAGE`                     | Language of general bot messages. Currently available: `en`, `de`, `ru`, `tr`, `it`, `es`, `id`, `nl`, `cn`.  [Contribute with additional translations](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `en`                               |
+| `BOT_LANGUAGE`                     | Язык общих сообщений бота. В настоящее время доступны: `en`, `de`, `ru`, `tr`, `it`, `es`, `id`, `nl`, `cn`.  [Contribute with additional translations](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `en`                               |
 
 Более подробную информацию можно найти в [официальном справочнике API](https://platform.openai.com/docs/api-reference/chat).
 
