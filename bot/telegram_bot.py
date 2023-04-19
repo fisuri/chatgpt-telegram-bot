@@ -413,8 +413,11 @@ class ChatGPTTelegramBot:
         if chat_id not in self.last_message:
             logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id})'
                             f' does not have anything to resend')
-            await context.bot.send_message(chat_id=chat_id,
-                                           text=localized_text('resend_failed', self.config['bot_language']))
+            await update.effective_message.reply_text(
+                message_thread_id=self.get_thread_id(update),
+                text=localized_text(
+                    'resend_failed', self.config['bot_language'])
+            )
             return
 
         # Update message text, clear self.last_message and send the request to prompt
@@ -441,7 +444,10 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
         reset_content = message_text(update.message)
         self.openai.reset_chat_history(chat_id=chat_id, content=reset_content)
-        await context.bot.send_message(chat_id=chat_id, text=localized_text('reset_done', self.config['bot_language']))
+        await update.effective_message.reply_text(
+            message_thread_id=self.get_thread_id(update),
+            text=localized_text('reset_done', self.config['bot_language'])
+        )
 
     async def image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -454,8 +460,11 @@ class ChatGPTTelegramBot:
         chat_id = update.effective_chat.id
         image_query = message_text(update.message)
         if image_query == '':
-            await context.bot.send_message(chat_id=chat_id,
-                                           text=localized_text('image_no_prompt', self.config['bot_language']))
+            await update.effective_message.reply_text(
+                message_thread_id=self.get_thread_id(update),
+                text=localized_text('image_no_prompt',
+                                    self.config['bot_language'])
+            )
             return
 
         logging.info(f'Запрос на создание нового изображения, полученный от пользователя {update.message.from_user.name} '
@@ -464,8 +473,7 @@ class ChatGPTTelegramBot:
         async def _generate():
             try:
                 image_url, image_size = await self.openai.generate_image(prompt=image_query)
-                await context.bot.send_photo(
-                    chat_id=chat_id,
+                await update.effective_message.reply_photo(
                     reply_to_message_id=self.get_reply_to_message_id(update),
                     photo=image_url
                 )
@@ -480,8 +488,8 @@ class ChatGPTTelegramBot:
 
             except Exception as e:
                 logging.exception(e)
-                await context.bot.send_message(
-                    chat_id=chat_id,
+                await update.effective_message.reply_text(
+                    message_thread_id=self.get_thread_id(update),
                     reply_to_message_id=self.get_reply_to_message_id(update),
                     text=f"{localized_text('image_fail', self.config['bot_language'])}: {str(e)}",
                     parse_mode=constants.ParseMode.MARKDOWN
@@ -512,8 +520,8 @@ class ChatGPTTelegramBot:
                 await media_file.download_to_drive(filename)
             except Exception as e:
                 logging.exception(e)
-                await context.bot.send_message(
-                    chat_id=chat_id,
+                await update.effective_message.reply_text(
+                    message_thread_id=self.get_thread_id(update),
                     reply_to_message_id=self.get_reply_to_message_id(update),
                     text=(
                         f"{localized_text('media_download_fail', bot_language)[0]}: "
@@ -532,8 +540,8 @@ class ChatGPTTelegramBot:
 
             except Exception as e:
                 logging.exception(e)
-                await context.bot.send_message(
-                    chat_id=update.effective_chat.id,
+                await update.effective_message.reply_text(
+                    message_thread_id=self.get_thread_id(update),
                     reply_to_message_id=self.get_reply_to_message_id(update),
                     text=localized_text('media_type_fail', bot_language)
                 )
@@ -570,8 +578,8 @@ class ChatGPTTelegramBot:
                     chunks = self.split_into_chunks(transcript_output)
 
                     for index, transcript_chunk in enumerate(chunks):
-                        await context.bot.send_message(
-                            chat_id=chat_id,
+                        await update.effective_message.reply_text(
+                            message_thread_id=self.get_thread_id(update),
                             reply_to_message_id=self.get_reply_to_message_id(
                                 update) if index == 0 else None,
                             text=transcript_chunk,
@@ -597,8 +605,8 @@ class ChatGPTTelegramBot:
                     chunks = self.split_into_chunks(transcript_output)
 
                     for index, transcript_chunk in enumerate(chunks):
-                        await context.bot.send_message(
-                            chat_id=chat_id,
+                        await update.effective_message.reply_text(
+                            message_thread_id=self.get_thread_id(update),
                             reply_to_message_id=self.get_reply_to_message_id(
                                 update) if index == 0 else None,
                             text=transcript_chunk,
@@ -607,8 +615,8 @@ class ChatGPTTelegramBot:
 
             except Exception as e:
                 logging.exception(e)
-                await context.bot.send_message(
-                    chat_id=chat_id,
+                await update.effective_message.reply_text(
+                    message_thread_id=self.get_thread_id(update),
                     reply_to_message_id=self.get_reply_to_message_id(update),
                     text=f"{localized_text('transcribe_fail', bot_language)}: {str(e)}",
                     parse_mode=constants.ParseMode.MARKDOWN
@@ -655,7 +663,10 @@ class ChatGPTTelegramBot:
             total_tokens = 0
 
             if self.config['stream']:
-                await context.bot.send_chat_action(chat_id=chat_id, action=constants.ChatAction.TYPING)
+                await update.effective_message.reply_chat_action(
+                    action=constants.ChatAction.TYPING,
+                    message_thread_id=self.get_thread_id(update)
+                )
 
                 stream_response = self.openai.get_chat_response_stream(
                     chat_id=chat_id, query=prompt)
@@ -680,8 +691,9 @@ class ChatGPTTelegramBot:
                             except:
                                 pass
                             try:
-                                sent_message = await context.bot.send_message(
-                                    chat_id=sent_message.chat_id,
+                                sent_message = await update.effective_message.reply_text(
+                                    message_thread_id=self.get_thread_id(
+                                        update),
                                     text=content if len(content) > 0 else "..."
                                 )
                             except:
@@ -696,8 +708,8 @@ class ChatGPTTelegramBot:
                             if sent_message is not None:
                                 await context.bot.delete_message(chat_id=sent_message.chat_id,
                                                                  message_id=sent_message.message_id)
-                            sent_message = await context.bot.send_message(
-                                chat_id=chat_id,
+                            sent_message = await update.effective_message.reply_text(
+                                message_thread_id=self.get_thread_id(update),
                                 reply_to_message_id=self.get_reply_to_message_id(
                                     update),
                                 text=content
@@ -743,8 +755,8 @@ class ChatGPTTelegramBot:
 
                     for index, chunk in enumerate(chunks):
                         try:
-                            await context.bot.send_message(
-                                chat_id=chat_id,
+                            await update.effective_message.reply_text(
+                                message_thread_id=self.get_thread_id(update),
                                 reply_to_message_id=self.get_reply_to_message_id(
                                     update) if index == 0 else None,
                                 text=chunk,
@@ -752,8 +764,9 @@ class ChatGPTTelegramBot:
                             )
                         except Exception:
                             try:
-                                await context.bot.send_message(
-                                    chat_id=chat_id,
+                                await update.effective_message.reply_text(
+                                    message_thread_id=self.get_thread_id(
+                                        update),
                                     reply_to_message_id=self.get_reply_to_message_id(
                                         update) if index == 0 else None,
                                     text=chunk
@@ -767,8 +780,8 @@ class ChatGPTTelegramBot:
 
         except Exception as e:
             logging.exception(e)
-            await context.bot.send_message(
-                chat_id=chat_id,
+            await update.effective_message.reply_text(
+                message_thread_id=self.get_thread_id(update),
                 reply_to_message_id=self.get_reply_to_message_id(update),
                 text=f"{localized_text('chat_fail', self.config['bot_language'])} {str(e)}",
                 parse_mode=constants.ParseMode.MARKDOWN
@@ -963,7 +976,8 @@ class ChatGPTTelegramBot:
             try:
                 await context.bot.edit_message_text(
                     chat_id=chat_id,
-                    message_id=message_id,
+                    message_id=int(message_id) if not is_inline else None,
+                    inline_message_id=message_id if is_inline else None,
                     text=text
                 )
             except Exception as e:
@@ -984,7 +998,9 @@ class ChatGPTTelegramBot:
         while not task.done():
             if not is_inline:
                 context.application.create_task(
-                    update.effective_chat.send_action(chat_action))
+                    update.effective_chat.send_action(
+                        chat_action, message_thread_id=self.get_thread_id(update))
+                )
             try:
                 await asyncio.wait_for(asyncio.shield(task), 4.5)
             except asyncio.TimeoutError:
@@ -995,8 +1011,8 @@ class ChatGPTTelegramBot:
         Sends the disallowed message to the user.
         """
         if not is_inline:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+            await update.effective_message.reply_text(
+                message_thread_id=self.get_thread_id(update),
                 text=self.disallowed_message,
                 disable_web_page_preview=True
             )
@@ -1009,8 +1025,8 @@ class ChatGPTTelegramBot:
         Sends the budget reached message to the user.
         """
         if not is_inline:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+            await update.effective_message.reply_text(
+                message_thread_id=self.get_thread_id(update),
                 text=self.budget_limit_message
             )
         else:
@@ -1022,6 +1038,14 @@ class ChatGPTTelegramBot:
         Handles errors in the telegram-python-bot library.
         """
         logging.error(f'Исключение при обработке обновления: {context.error}')
+
+    def get_thread_id(self, update: Update) -> int | None:
+        """
+        Gets the message thread id for the update, if any
+        """
+        if update.effective_message and update.effective_message.is_topic_message:
+            return update.effective_message.message_thread_id
+        return None
 
     def get_stream_cutoff_values(self, update: Update, content: str) -> int:
         """
