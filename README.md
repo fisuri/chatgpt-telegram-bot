@@ -9,7 +9,7 @@ A [Telegram bot](https://core.telegram.org/bots/api) that integrates with OpenAI
 ## Скриншоты
 ![demo](https://user-images.githubusercontent.com/11541888/225114786-0d639854-b3e1-4214-b49a-e51ce8c40387.png)
 
-## Features
+## Особенности
 - [x] Поддержка разметки в ответах
 - [x] Сброс разговора с помощью команды `/reset`.
 - [x] Индикатор набора текста при генерации ответа
