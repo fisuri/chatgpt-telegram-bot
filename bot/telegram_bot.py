@@ -910,7 +910,7 @@ class ChatGPTTelegramBot:
                                                             parse_mode=constants.ParseMode.MARKDOWN)
 
                         logging.info(
-                            f'Генерирование ответа для встроенного запроса по {name}')
+                            f'Generating response for inline query by {name}')
                         response, total_tokens = await self.openai.get_chat_response(chat_id=user_id, query=query)
 
                         text_content = f'{query}\n\n_{answer_tr}:_\n{response}'
@@ -929,7 +929,7 @@ class ChatGPTTelegramBot:
 
         except Exception as e:
             logging.error(
-                f'Не удалось ответить на встроенный запрос через обратный вызов кнопки: {e}')
+                f'Failed to respond to an inline query via button callback: {e}')
             logging.exception(e)
             localized_answer = localized_text(
                 'chat_fail', self.config['bot_language'])
