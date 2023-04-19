@@ -25,7 +25,7 @@ A [Telegram bot](https://core.telegram.org/bots/api) that integrates with OpenAI
 - [x] (NEW!) Поддержка GPT-4
   - Если у вас есть доступ к API GPT-4, просто измените параметр `OPENAI_MODEL` на `gpt-4`
 - [x] (NEW!) Локализация языка бота
-  - Доступные языки :gb: :de: :ru: :tr: :it: :es: :indonesia:
+  - Доступные языки :gb: :de: :ru: :tr: :it: :es: :indonesia: :nl:
 - [x] (NEW!) Улучшена поддержка встроенных запросов для групповых и приватных чатов - [@bugfloyd](https://github.com/bugfloyd)
   - Чтобы использовать эту функцию, включите встроенные запросы для вашего бота в BotFather с помощью команды `/setinline` [command](https://core.telegram.org/bots/inline)
 
