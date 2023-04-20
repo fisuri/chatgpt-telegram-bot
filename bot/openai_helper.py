@@ -27,11 +27,13 @@ def default_max_tokens(model: str) -> int:
     """
     return 1200 if model in GPT_3_MODELS else 2400
 
+
 # Load translations
 parent_dir_path = os.path.join(os.path.dirname(__file__), os.pardir)
 translations_file_path = os.path.join(parent_dir_path, 'translations.json')
 with open(translations_file_path, 'r', encoding='utf-8') as f:
     translations = json.load(f)
+
 
 def localized_text(key, bot_language):
     """
@@ -41,12 +43,14 @@ def localized_text(key, bot_language):
     try:
         return translations[bot_language][key]
     except KeyError:
-        logging.warning(f"No translation available for bot_language code '{bot_language}' and key '{key}'")
+        logging.warning(
+            f"No translation available for bot_language code '{bot_language}' and key '{key}'")
         # Fallback to English if the translation is not available
         if key in translations['en']:
             return translations['en'][key]
         else:
-            logging.warning(f"No english definition found for key '{key}' in translations.json")
+            logging.warning(
+                f"No english definition found for key '{key}' in translations.json")
             # return key as text
             return key
 
@@ -65,7 +69,8 @@ class OpenAIHelper:
         openai.proxy = config['proxy']
         self.config = config
         self.conversations: dict[int: list] = {}  # {chat_id: history}
-        self.last_updated: dict[int: datetime] = {}  # {chat_id: last_update_timestamp}
+        # {chat_id: last_update_timestamp}
+        self.last_updated: dict[int: datetime] = {}
 
     def get_conversation_stats(self, chat_id: int) -> tuple[int, int]:
         """
@@ -185,13 +190,16 @@ class OpenAIHelper:
             )
 
         except openai.error.RateLimitError as e:
-            raise Exception(f"⚠️ _{localized_text('openai_rate_limit', bot_language)}._ ⚠️\n{str(e)}") from e
+            raise Exception(
+                f"⚠️ _{localized_text('openai_rate_limit', bot_language)}._ ⚠️\n{str(e)}") from e
 
         except openai.error.InvalidRequestError as e:
-            raise Exception(f"⚠️ _{localized_text('openai_invalid', bot_language)}._ ⚠️\n{str(e)}") from e
+            raise Exception(
+                f"⚠️ _{localized_text('openai_invalid', bot_language)}._ ⚠️\n{str(e)}") from e
 
         except Exception as e:
-            raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
+            raise Exception(
+                f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
 
     async def generate_image(self, prompt: str) -> tuple[str, str]:
         """
@@ -216,7 +224,8 @@ class OpenAIHelper:
 
             return response['data'][0]['url'], self.config['image_size']
         except Exception as e:
-            raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
+            raise Exception(
+                f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
 
     async def transcribe(self, filename):
         """
@@ -228,7 +237,8 @@ class OpenAIHelper:
                 return result.text
         except Exception as e:
             logging.exception(e)
-            raise Exception(f"⚠️ _{localized_text('error', self.config['bot_language'])}._ ⚠️\n{str(e)}") from e
+            raise Exception(
+                f"⚠️ _{localized_text('error', self.config['bot_language'])}._ ⚠️\n{str(e)}") from e
 
     def reset_chat_history(self, chat_id, content=''):
         """
@@ -267,7 +277,8 @@ class OpenAIHelper:
         :return: The summary
         """
         messages = [
-            {"role": "assistant", "content": "Summarize this conversation in 700 characters or less"},
+            {"role": "assistant",
+                "content": "Summarize this conversation in 700 characters or less"},
             {"role": "user", "content": str(conversation)}
         ]
         response = await openai.ChatCompletion.acreate(
@@ -341,5 +352,6 @@ class OpenAIHelper:
         response = requests.get(
             "https://api.openai.com/dashboard/billing/usage", headers=headers, params=params)
         billing_data = json.loads(response.text)
-        usage_month = billing_data["total_usage"] / 100  # convert cent amount to dollars
+        usage_month = billing_data["total_usage"] / \
+            100  # convert cent amount to dollars
         return usage_month

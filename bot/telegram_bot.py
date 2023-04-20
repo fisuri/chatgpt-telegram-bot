@@ -59,20 +59,20 @@ class ChatGPTTelegramBot:
                 'help_description', bot_language)),
             BotCommand(command='reset', description=localized_text(
                 'reset_description', bot_language)),
-            BotCommand(command='adduser',
-                       description='Добавить нового пользователя'),
-            BotCommand(command='addadmin',
-                       description='Добавить нового администратора'),
-            BotCommand(command='removeuser',
-                       description='Удалить пользователя'),
-            BotCommand(command='removeadmin',
-                       description='Удалить администратора'),
-            BotCommand(command='list_users',
-                       description='Список пользователей'),
-            BotCommand(command='send_message_to_all',
-                       description='Отправить сообщение всем пользователям и администраторам'),
-            BotCommand(command='send_message_to_all_users',
-                       description='Отправить сообщение всем пользователям'),
+            BotCommand(command='adduser', description=localized_text(
+                'adduser_description', bot_language)),
+            BotCommand(command='addadmin', description=localized_text(
+                'addadmin_description', bot_language)),
+            BotCommand(command='removeuser', description=localized_text(
+                'removeuser_description', bot_language)),
+            BotCommand(command='removeadmin', description=localized_text(
+                'removeadmin_description', bot_language)),
+            BotCommand(command='list_users', description=localized_text(
+                'list_users_description', bot_language)),
+            BotCommand(command='send_message_to_all', description=localized_text(
+                'send_message_to_all_description', bot_language)),
+            BotCommand(command='send_message_to_all_users', description=localized_text(
+                'send_message_to_all_users_description', bot_language)),
             BotCommand(command='image', description=localized_text(
                 'image_description', bot_language)),
             BotCommand(command='stats', description=localized_text(
@@ -411,8 +411,8 @@ class ChatGPTTelegramBot:
 
         chat_id = update.effective_chat.id
         if chat_id not in self.last_message:
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id})'
-                            f' does not have anything to resend')
+            logging.warning(f'Пользователь {update.message.from_user.name} (id: {update.message.from_user.id})'
+                            f' не имеет ничего для повторной отправки')
             await update.effective_message.reply_text(
                 message_thread_id=self.get_thread_id(update),
                 text=localized_text(
@@ -942,7 +942,7 @@ class ChatGPTTelegramBot:
 
         except Exception as e:
             logging.error(
-                f'Failed to respond to an inline query via button callback: {e}')
+                f'Не удалось ответить на встроенный запрос через обратный вызов кнопки: {e}')
             logging.exception(e)
             localized_answer = localized_text(
                 'chat_fail', self.config['bot_language'])
@@ -1218,13 +1218,13 @@ class ChatGPTTelegramBot:
         user_id = update.inline_query.from_user.id if is_inline else update.message.from_user.id
 
         if not await self.is_allowed(update, context, is_inline=is_inline):
-            logging.warning(f'User {name} (id: {user_id}) '
-                            f'is not allowed to use the bot')
+            logging.warning(f'Пользователь {name} (id: {user_id}) '
+                            f'не имеет права использовать бота')
             await self.send_disallowed_message(update, context, is_inline)
             return False
         if not self.is_within_budget(update, is_inline=is_inline):
-            logging.warning(f'User {name} (id: {user_id}) '
-                            f'reached their usage limit')
+            logging.warning(f'Пользователь {name} (id: {user_id}) '
+                            f'достиг лимита использования')
             await self.send_budget_reached_message(update, context, is_inline)
             return False
 
@@ -1241,7 +1241,8 @@ class ChatGPTTelegramBot:
                 self.usage["guests"].add_chat_tokens(
                     used_tokens, self.config['token_price'])
         except Exception as e:
-            logging.warning(f'Failed to add tokens to usage_logs: {str(e)}')
+            logging.warning(
+                f'Не удалось добавить маркеры в usage_logs: {str(e)}')
             pass
 
     def get_reply_to_message_id(self, update: Update):
