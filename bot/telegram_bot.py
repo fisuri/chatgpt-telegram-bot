@@ -445,8 +445,8 @@ class ChatGPTTelegramBot:
         reset_content = message_text(update.message)
         self.openai.reset_chat_history(chat_id=chat_id, content=reset_content)
         await update.effective_message.reply_text(
-           message_thread_id=self.get_thread_id(update),
-           text=localized_text('reset_done', self.config['bot_language'])
+            message_thread_id=self.get_thread_id(update),
+            text=localized_text('reset_done', self.config['bot_language'])
         )
 
     async def image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -461,8 +461,9 @@ class ChatGPTTelegramBot:
         image_query = message_text(update.message)
         if image_query == '':
             await update.effective_message.reply_text(
-               message_thread_id=self.get_thread_id(update),
-               text=localized_text('image_no_prompt', self.config['bot_language'])
+                message_thread_id=self.get_thread_id(update),
+                text=localized_text('image_no_prompt',
+                                    self.config['bot_language'])
             )
             return
 
@@ -583,7 +584,8 @@ class ChatGPTTelegramBot:
                     for index, transcript_chunk in enumerate(chunks):
                         await update.effective_message.reply_text(
                             message_thread_id=self.get_thread_id(update),
-                            reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                            reply_to_message_id=self.get_reply_to_message_id(
+                                update) if index == 0 else None,
                             text=transcript_chunk,
                             parse_mode=constants.ParseMode.MARKDOWN
                         )
@@ -609,7 +611,8 @@ class ChatGPTTelegramBot:
                     for index, transcript_chunk in enumerate(chunks):
                         await update.effective_message.reply_text(
                             message_thread_id=self.get_thread_id(update),
-                            reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                            reply_to_message_id=self.get_reply_to_message_id(
+                                update) if index == 0 else None,
                             text=transcript_chunk,
                             parse_mode=constants.ParseMode.MARKDOWN
                         )
@@ -693,7 +696,8 @@ class ChatGPTTelegramBot:
                                 pass
                             try:
                                 sent_message = await update.effective_message.reply_text(
-                                    message_thread_id=self.get_thread_id(update),
+                                    message_thread_id=self.get_thread_id(
+                                        update),
                                     text=content if len(content) > 0 else "..."
                                 )
                             except:
@@ -710,7 +714,8 @@ class ChatGPTTelegramBot:
                                                                  message_id=sent_message.message_id)
                             sent_message = await update.effective_message.reply_text(
                                 message_thread_id=self.get_thread_id(update),
-                                reply_to_message_id=self.get_reply_to_message_id(update),
+                                reply_to_message_id=self.get_reply_to_message_id(
+                                    update),
                                 text=content
                             )
                         except:
@@ -754,15 +759,20 @@ class ChatGPTTelegramBot:
 
                     for index, chunk in enumerate(chunks):
                         try:
+                            await update.effective_message.reply_text(
                                 message_thread_id=self.get_thread_id(update),
+                                reply_to_message_id=self.get_reply_to_message_id(
+                                    update) if index == 0 else None,
                                 text=chunk,
                                 parse_mode=constants.ParseMode.MARKDOWN
                             )
                         except Exception:
                             try:
                                 await update.effective_message.reply_text(
-                                    message_thread_id=self.get_thread_id(update),
-                                    reply_to_message_id=self.get_reply_to_message_id(update) if index == 0 else None,
+                                    message_thread_id=self.get_thread_id(
+                                        update),
+                                    reply_to_message_id=self.get_reply_to_message_id(
+                                        update) if index == 0 else None,
                                     text=chunk
                                 )
                             except Exception as exception:
@@ -992,7 +1002,8 @@ class ChatGPTTelegramBot:
         while not task.done():
             if not is_inline:
                 context.application.create_task(
-                    update.effective_chat.send_action(chat_action, message_thread_id=self.get_thread_id(update))
+                    update.effective_chat.send_action(
+                        chat_action, message_thread_id=self.get_thread_id(update))
                 )
             try:
                 await asyncio.wait_for(asyncio.shield(task), 4.5)
