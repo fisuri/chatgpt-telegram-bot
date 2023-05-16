@@ -34,7 +34,7 @@ async def is_user_in_group(update: Update, context: CallbackContext, user_id: in
         chat_member = await context.bot.get_chat_member(update.message.chat_id, user_id)
         return chat_member.status in [ChatMember.OWNER, ChatMember.ADMINISTRATOR, ChatMember.MEMBER]
     except telegram.error.BadRequest as e:
-        if str(e) == "User not found":
+        if str(e) == "Пользователь не найден":
             return False
         else:
             raise e
@@ -91,7 +91,8 @@ async def wrap_with_indicator(update: Update, context: CallbackContext, coroutin
     while not task.done():
         if not is_inline:
             context.application.create_task(
-                update.effective_chat.send_action(chat_action, message_thread_id=get_thread_id(update))
+                update.effective_chat.send_action(
+                    chat_action, message_thread_id=get_thread_id(update))
             )
         try:
             await asyncio.wait_for(asyncio.shield(task), 4.5)
@@ -120,7 +121,7 @@ async def edit_message_with_retry(context: ContextTypes.DEFAULT_TYPE, chat_id: i
             parse_mode=constants.ParseMode.MARKDOWN if markdown else None
         )
     except telegram.error.BadRequest as e:
-        if str(e).startswith("Message is not modified"):
+        if str(e).startswith("Сообщение не изменено"):
             return
         try:
             await context.bot.edit_message_text(
@@ -130,7 +131,7 @@ async def edit_message_with_retry(context: ContextTypes.DEFAULT_TYPE, chat_id: i
                 text=text
             )
         except Exception as e:
-            logging.warning(f'Failed to edit message: {str(e)}')
+            logging.warning(f'Не удалось отредактировать сообщение: {str(e)}')
             raise e
 
     except Exception as e:
@@ -167,11 +168,13 @@ async def is_allowed(config, update: Update, context: CallbackContext, is_inline
             if not user.strip():
                 continue
             if await is_user_in_group(update, context, user):
-                logging.info(f'{user} is a member. Allowing group chat message...')
+                logging.info(
+                    f'{user} является членом группы. Разрешение сообщений группового чата...')
                 return True
-        logging.info(f'Group chat messages from user {name} '
-                     f'(id: {user_id}) are not allowed')
+        logging.info(f'Сообщения в групповом чате от пользователя {name} '
+                     f'(id: {user_id}) запрещены')
     return False
+
 
 def is_admin(config, user_id: int, log_no_admin=False) -> bool:
     """
@@ -180,7 +183,7 @@ def is_admin(config, user_id: int, log_no_admin=False) -> bool:
     """
     if config['admin_user_ids'] == '-':
         if log_no_admin:
-            logging.info('No admin user defined.')
+            logging.info('Пользователь-администратор не определен.')
         return False
 
     admin_user_ids = config['admin_user_ids'].split(',')
@@ -208,15 +211,16 @@ def get_user_budget(config, user_id) -> float | None:
     if config['allowed_user_ids'] == '*':
         # same budget for all users, use value in first position of budget list
         if len(user_budgets) > 1:
-            logging.warning('multiple values for budgets set with unrestricted user list '
-                            'only the first value is used as budget for everyone.')
+            logging.warning('несколько значений для бюджетов, установленных с неограниченным списком пользователей '
+                            'только первое значение используется в качестве бюджета для всех.')
         return float(user_budgets[0])
 
     allowed_user_ids = config['allowed_user_ids'].split(',')
     if str(user_id) in allowed_user_ids:
         user_index = allowed_user_ids.index(str(user_id))
         if len(user_budgets) <= user_index:
-            logging.warning(f'No budget set for user id: {user_id}. Budget list shorter than user list.')
+            logging.warning(
+                f'Для идентификатора пользователя не установлен бюджет: {user_id}. Бюджетный список короче, чем список пользователей.')
             return 0.0
         return float(user_budgets[user_index])
     return None
@@ -247,12 +251,14 @@ def get_remaining_budget(config, usage, update: Update, is_inline=False) -> floa
     user_budget = get_user_budget(config, user_id)
     budget_period = config['budget_period']
     if user_budget is not None:
-        cost = usage[user_id].get_current_cost()[budget_cost_map[budget_period]]
+        cost = usage[user_id].get_current_cost(
+        )[budget_cost_map[budget_period]]
         return user_budget - cost
 
     # Get budget for guests
     if 'guests' not in usage:
-        usage['guests'] = UsageTracker('guests', 'all guest users in group chats')
+        usage['guests'] = UsageTracker(
+            'guests', 'all guest users in group chats')
     cost = usage['guests'].get_current_cost()[budget_cost_map[budget_period]]
     return config['guest_budget'] - cost
 
@@ -271,7 +277,8 @@ def is_within_budget(config, usage, update: Update, is_inline=False) -> bool:
     name = update.inline_query.from_user.name if is_inline else update.message.from_user.name
     if user_id not in usage:
         usage[user_id] = UsageTracker(user_id, name)
-    remaining_budget = get_remaining_budget(config, usage, update, is_inline=is_inline)
+    remaining_budget = get_remaining_budget(
+        config, usage, update, is_inline=is_inline)
     return remaining_budget > 0
 
 
@@ -291,7 +298,7 @@ def add_chat_request_to_usage_tracker(usage, config, user_id, used_tokens):
         if str(user_id) not in allowed_user_ids and 'guests' in usage:
             usage["guests"].add_chat_tokens(used_tokens, config['token_price'])
     except Exception as e:
-        logging.warning(f'Failed to add tokens to usage_logs: {str(e)}')
+        logging.warning(f'Не удалось добавить маркеры в usage_logs: {str(e)}')
         pass
 
 
