@@ -27,13 +27,11 @@ def default_max_tokens(model: str) -> int:
     """
     return 1200 if model in GPT_3_MODELS else 2400
 
-
 # Load translations
 parent_dir_path = os.path.join(os.path.dirname(__file__), os.pardir)
 translations_file_path = os.path.join(parent_dir_path, 'translations.json')
 with open(translations_file_path, 'r', encoding='utf-8') as f:
     translations = json.load(f)
-
 
 def localized_text(key, bot_language):
     """

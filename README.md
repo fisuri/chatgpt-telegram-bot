@@ -25,7 +25,7 @@ A [Telegram bot](https://core.telegram.org/bots/api) that integrates with OpenAI
 - [x] (NEW!) Поддержка GPT-4
   - Если у вас есть доступ к API GPT-4, просто измените параметр `OPENAI_MODEL` на `gpt-4`
 - [x] (NEW!) Локализация языка бота
-  - Доступные языки :gb: :de: :ru: :tr: :it: :es: :indonesia: :netherlands: :cn:
+  - Доступные языки :gb: :de: :ru: :tr: :it: :finland: :es: :indonesia: :netherlands: :cn: :taiwan: :vietnam: :iran:
 - [x] (NEW!) Улучшена поддержка встроенных запросов для групповых и приватных чатов - [@bugfloyd](https://github.com/bugfloyd)
   - Чтобы использовать эту функцию, включите встроенные запросы для вашего бота в BotFather с помощью команды `/setinline` [command](https://core.telegram.org/bots/inline)
 
@@ -84,6 +84,7 @@ PR всегда приветствуются!
 | `MAX_HISTORY_SIZE`                 | Максимальное количество сообщений для хранения в памяти, после чего разговор будет обобщен, чтобы избежать чрезмерного использования токенов                                                                                                 | `15`                               |
 | `MAX_CONVERSATION_AGE_MINUTES`     | Максимальное количество минут, которое разговор должен прожить с момента последнего сообщения, после чего разговор будет сброшен                                                                                                  | `180`                              |
 | `VOICE_REPLY_WITH_TRANSCRIPT_ONLY` | Отвечать ли на голосовые сообщения только стенограммой или отвечать на стенограмму в формате ChatGPT                                                                                                                | `false`                            |
+| `VOICE_REPLY_PROMPTS`              | Список фраз, разделенных точкой с запятой ("Hi bot;Hello chat"). Если стенограмма начинается с любой из них - она будет рассматриваться как подсказка даже если `VOICE_REPLY_WITH_TRANSCRIPT_ONLY` установлено на `true` | -
 | `N_CHOICES`                        | Количество ответов для каждого входного сообщения. **Примечание**: установка значения больше 1 не будет работать правильно, если включен `STREAM`.                                                                     | `1`                                |
 | `TEMPERATURE`                      | Число от 0 до 2. Более высокие значения сделают вывод более случайным                                                                                                                                                   | `1.0`                              |
 | `PRESENCE_PENALTY`                 | Число между -2,0 и 2,0. Положительные значения наказывают новые лексемы в зависимости от того, появляются ли они в тексте до сих пор.                                                                                                         | `0.0`                              |
@@ -91,7 +92,7 @@ PR всегда приветствуются!
 | `IMAGE_SIZE`                       | Размер генерируемого DALL-E изображения. Допустимые значения: `256x256`, `512x512` или `1024x1024`.                                                                                                                                     | `512x512`                          |
 | `GROUP_TRIGGER_KEYWORD`            | Если установлено, бот в групповых чатах будет отвечать только на сообщения, начинающиеся с этого ключевого слова                                                                                                                               | -                                  |
 | `IGNORE_GROUP_TRANSCRIPTIONS`      | Если установлено значение true, бот не будет обрабатывать транскрипции в групповых чатах.                                                                                                                                                   | `true`                             |
-| `BOT_LANGUAGE`                     | Язык общих сообщений бота. В настоящее время доступны: `en`, `de`, `ru`, `tr`, `it`, `es`, `id`, `nl`, `cn`.  [Contribute with additional translations](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `en`                               |
+| `BOT_LANGUAGE`                     | Язык общих сообщений бота. В настоящее время доступны: `en`, `de`, `ru`, `tr`, `it`, `fi`, `es`, `id`, `nl`, `zh-cn`, `zh-tw`, `vi`, `fa`.  [Contribute with additional translations](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `ru`                               |
 
 Более подробную информацию можно найти в [официальном справочнике API](https://platform.openai.com/docs/api-reference/chat).
 
