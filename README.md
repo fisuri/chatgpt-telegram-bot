@@ -154,9 +154,8 @@ docker build -t chatgpt-telegram-bot .
 docker run -it --env-file .env chatgpt-telegram-bot
 ```
 
-## Благодарности
-
-- [ChatGPT](https://chat.openai.com/chat) от [OpenAI](https://openai.com)
+## Credits
+- [ChatGPT](https://chat.openai.com/chat) from [OpenAI](https://openai.com)
 - [python-telegram-bot](https://python-telegram-bot.org)
 - [jiaaro/pydub](https://github.com/jiaaro/pydub)
 

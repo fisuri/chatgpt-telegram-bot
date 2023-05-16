@@ -3,8 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import itertools
-import json
 
 from uuid import uuid4
 from telegram import BotCommandScopeAllGroupChats, Update, constants
